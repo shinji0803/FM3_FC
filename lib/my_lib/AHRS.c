@@ -21,7 +21,7 @@ static Vector3f errorRollPitch = { 0.0f, 0.0f, 0.0f};
 static Vector3f errorYaw = { 0.0f, 0.0f, 0.0f};
 
 //AHRS Gains
-static gain rp = {Kp_ROLLPITCH, Ki_ROLLPITCH, 0}, y = {Kp_YAW, Ki_YAW, 0};
+static Gain rp = {Kp_ROLLPITCH, Ki_ROLLPITCH, 0, 0, 4, 8}, y = {Kp_YAW, Ki_YAW, 0, 12, 16, 20};
 
 void AHRS_Init(void)
 {
@@ -251,7 +251,7 @@ void AHRS_drift_correction(void)
 	Vector_Add(&omega_I, &omega_I, &scaled_omega_I);
 }
 
-void AHRS_get_gain(gain *RandP, gain *Y)
+void AHRS_get_gain(Gain *RandP, Gain *Y)
 {
 	RandP->p_gain = rp.p_gain;
 	RandP->i_gain = rp.i_gain;
@@ -259,7 +259,7 @@ void AHRS_get_gain(gain *RandP, gain *Y)
 	Y->i_gain = y.i_gain;
 }
 
-void AHRS_set_gain(gain *RandP, gain *Y)
+void AHRS_set_gain(Gain *RandP, Gain *Y)
 {
 	rp.p_gain = RandP->p_gain;
 	rp.i_gain = RandP->i_gain;
@@ -269,10 +269,10 @@ void AHRS_set_gain(gain *RandP, gain *Y)
 
 void AHRS_load_gain(void)
 {
-	rp.p_gain = read_float(RP_P_ADD);
-	rp.i_gain = read_float(RP_I_ADD);
-	y.p_gain = read_float(Y_P_ADD);
-	y.i_gain = read_float(Y_I_ADD);
+	rp.p_gain = read_float(rp.p_add);
+	rp.i_gain = read_float(rp.i_add);
+	y.p_gain = read_float(y.p_add);
+	y.i_gain = read_float(y.i_add);
 }
 
 void AHRS_get_gyro(Vector3f *g)

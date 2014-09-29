@@ -21,30 +21,29 @@ typedef union __generic_64bit{
 } generic_64bit;
 
 
-typedef struct Vector3f{
+typedef struct __Vector3f{
 	float x, y, z;
 } Vector3f;
 
-typedef struct Vector3d{
+typedef struct __Vector3d{
 	uint16_t x, y, z;
 } Vector3d;
 
-typedef struct Matrix3f{
+typedef struct __Matrix3f{
 	Vector3f a;
 	Vector3f b;
 	Vector3f c;	
 } Matrix3f;
 
-typedef struct gain{
+typedef struct __gain{
 	float p_gain;
 	float i_gain;
 	float d_gain;
-} gain;
-
-//gain address on fram
-#define P_ADD 0
-#define I_ADD 4
-#define D_ADD 8
+	
+	uint16_t p_add;
+	uint16_t i_add;
+	uint16_t d_add;
+} Gain;
 
 //AHRS gain
 #define RP_P_ADD 12
@@ -56,7 +55,7 @@ typedef struct{
 	uint16_t input[8];
 	uint16_t output[8];
 	uint16_t trim[8];
-} radio;
+} Radio;
 
 typedef struct{
 	uint16_t frame_count;		// counts created I2C frames
@@ -77,6 +76,13 @@ typedef struct{
 	float y;
 } flow_data;
 
-
+typedef enum{
+	ROLL,
+	PITCH,
+	YAW,
+	RATE_ROLL,
+	RATE_PITCH,
+	RATE_YAW
+} axis_t;
 
 #endif

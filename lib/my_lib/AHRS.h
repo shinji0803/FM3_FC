@@ -36,9 +36,9 @@ void AHRS_dcm_update(float dt); // update DCM
 void AHRS_dcm_normalize(void); // normalize DCM
 void AHRS_drift_correction(void); // gyro drift correction
 // get AHRS gain
-void AHRS_get_gain(gain *RandP, gain *Y);
+void AHRS_get_gain(Gain *RandP, Gain *Y);
 // set AHRS gain
-void AHRS_set_gain(gain *RandP, gain *Y);
+void AHRS_set_gain(Gain *RandP, Gain *Y);
 // get AHRS gain from FRAM
 void AHRS_load_gain(void);
 

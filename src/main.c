@@ -23,101 +23,38 @@ inline void loop_20hz(void);
 inline void loop_50hz(void);
 inline void loop_100hz(void);
 inline void loop_200hz(void);
+
 extern volatile timeFlg time;
 
-extern mavlink_message_t msg;
-
-volatile uint32_t now = 0, rev_update = 0, delta_time = 0;
-uint8_t input_detect = 0;
-uint8_t p_flg, input, menu_flg;
+uint8_t p_flg;
 
 int32_t main(void){
-
-	uint32_t start, end;
-
-	//‰Šú‰»ŠJŽn
-	conio_init(57600UL);
 	
+	//Initialize start
+	conio_init(57600UL);
 	Init_timer();
 	InitLED();
-	rcin_enable(0);
+	
+	rcin_enable(0); //RC In & Out port initialize
+	rcout_enable(0);
+	rcout_enable(1);
+	rcout_enable(2);
+	rcout_enable(3);
 	
 	Init_i2c();
 	Init_fram();
 	Init_DT();
+	wait(100);
 	
 	printf("Initialize OK.\r\n");
-	wait(100);
-	//‰Šú‰»I—¹
+	//Initialize complete
 	
-	AHRS_Init();
-	
-	Mavlink_port_init(2, 57600UL);
-		
-	Vector3f gyro;
-	Vector3f acc, mag;
-	Vector3f attitude;
+	console_init();
 	
 	while(1){
-		Mavlink_rx_check();
 		
-		if(time.flg_1hz == 1){
-			time.flg_1hz = 0;
-			Mavlink_heartbeat_send();
-		}
+		console_run();
 		
-		if(time.flg_20hz == 1){
-			time.flg_20hz = 0;
-			//rc_multiread(radio);
-			//Mavlink_rcin_raw_send(radio);
-			
-			AHRS_get_raw_gyro(&gyro);
-			AHRS_get_raw_acc(&acc);
-			AHRS_get_raw_mag(&mag);
-			Mavlink_imu_raw_send( &acc, &gyro, &mag);
-			
-			//Mavlink_debug_send( 0, (float)(delta_time) / 1000000.f);
-			//Mavlink_debug_send( 1, (float)(end - start));
-		}
-		
-		if(time.flg_50hz == 1){
-			time.flg_50hz = 0;
-			
-			AHRS_get_euler(&attitude);
-			AHRS_get_omega(&gyro);
-			Mavlink_att_send(&attitude, &gyro);
-		}
-		
-		if(time.flg_100hz == 1){
-			time.flg_100hz = 0;
-			start = get_micros();
-			AHRS_read_imu();
-			
-			now = get_micros();
-			delta_time = now - rev_update;
-			AHRS_dcm_update((float)delta_time / 1000000.f);
-			rev_update = now;
-			
-			AHRS_dcm_normalize();
-			AHRS_drift_correction();
-			end = get_micros();
-		}
-		
-		if(input_detect == 1){
-			if(menu_flg == 0){
-				if(input == '\n'){
-					input_detect = 0;
-					top_menu();
-				}
-				else if(input != '\r')	top_menu_branch(input);
-			}
-			
-			else if(menu_flg == 1){
-				input_detect = 0;
-				if(input == '\n') gain_menu();
-				if(input != '\r' && input != '\n') gain_menu_branch(input);	
-			}
-		}
 	} 
 }
 
@@ -144,11 +81,7 @@ inline void loop_50hz(){
 }
 
 inline void loop_100hz(){
-	//detect user input
-	if(conio_available() > 0){
-		input_detect = 1;
-		input = getch();
-	}
+
 }
 
 inline void loop_200hz(){
