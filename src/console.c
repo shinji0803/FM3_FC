@@ -5,11 +5,18 @@
 #include "parameters.h"
 #include "rc_io.h"
 #include "AHRS.h"
+#include "myMath.h"
+
+static uint8_t menu_flg = 0, input = 0, input_detect = 0, start_input = 0;
+static void *inputValiable = NULL;
 
 static Vector3f att, omega;
 static uint16_t rcInput[8];
-static uint8_t menu_flg = 0, input = 0, input_detect = 0;
+
 static axis_t axis = ROLL;
+
+float kp, ki, kp_yaw, ki_yaw;
+float att_p = 0, att_i = 0, att_d = 0;
 
 /* Menu print function */
 static void top_menu(void);
@@ -22,6 +29,9 @@ static void top_menu_branch(uint8_t command);
 static void att_gain_menu_branch(uint8_t command);
 static void att_axis_gain_menu_branch(uint8_t command);
 static void ahrs_gain_menu_branch(uint8_t command);
+
+/* Capture user input function */
+static uint8_t get_float_input(uint8_t inputChar);
 
 
 /* Command type */
@@ -70,6 +80,8 @@ static const uint8_t ahrs_gain_menu_content_size = sizeof(ahrs_gain_menu_content
 void console_init(void)
 {
 	top_menu();
+	/* Initial AHRS Gain load */
+	AHRS_get_gain(&kp, &ki, &kp_yaw, &ki_yaw);
 }
 
 /* Console control function */
@@ -77,12 +89,14 @@ void console_run(void)
 {
 	uint8_t old_menu_flg;
 	
+	if(inputValiable != NULL) start_input = 1;
+	
 	if(conio_available() > 0){
 		input = getch();
 		input_detect = 1;
 	}
 	
-	if(input_detect == 1){
+	if(input_detect == 1 && start_input == 0){
 		old_menu_flg = menu_flg;
 		
 		switch(menu_flg){
@@ -96,19 +110,28 @@ void console_run(void)
 			
 			case 1: // Attitude Gain Set Menu
 			input_detect = 0;
-			if(input == '\n') att_ctrl_gain_menu();
+			if(input == '\n'){
+				input_detect = 0;
+				att_ctrl_gain_menu();
+			}
 			if(input != '\r' && input != '\n') att_gain_menu_branch(input);	
 			break;
 			
 			case 2: // AHRS Gain Set Menu
 			input_detect = 0;
-			if(input == '\n') ahrs_gain_menu();
+			if(input == '\n'){
+				input_detect = 0;
+				ahrs_gain_menu();
+			}
 			if(input != '\r' && input != '\n') ahrs_gain_menu_branch(input);	
 			break;
 			
 			case 3: // Attitude Gain (Only one axis) Set Menu
 			input_detect = 0;
-			if(input == '\n') att_ctrl_axis_gain_menu();
+			if(input == '\n'){
+				att_ctrl_axis_gain_menu();
+				input_detect = 0;
+			}
 			if(input != '\r' && input != '\n') att_axis_gain_menu_branch(input);	
 			break;
 		}
@@ -129,6 +152,12 @@ void console_run(void)
 				break;
 			}
 		}
+	}
+	
+	/* Get value from user input */
+	if(start_input == 1 && input != 0){
+		start_input = get_float_input(input);
+		input = 0;
 	}
 }
 
@@ -195,26 +224,19 @@ static void att_ctrl_axis_gain_menu(void)
 
 static void top_menu_branch(uint8_t command)
 {
-	//uint8_t i = 0;
 	
-	if(p_flg == 1){
-	/*
-		while(i < (top_menu_content_size + 1)){
-			if(top_menu[i].command == command) break;
-			i ++;
-		}
-	*/	
-	
+	if(time.print == 1){
 		switch(command){
 			case 'r':
 			rc_multiread(rcInput);
-			printf("IN: %d, %d, %d, %d, %d\r\n", rcInput[0], rcInput[1], rcInput[2], rcInput[3], rcInput[4]);
+			printf("IN: %4d, %4d, %4d, %4d, %4d\r\n", rcInput[0], rcInput[1], rcInput[2], rcInput[3], rcInput[4]);
 			break;
 			
 			case 'a':
 			AHRS_get_euler(&att);
 			AHRS_get_omega(&omega);
-			printf("ATT: %+f, %+f, %+f  Omega: %+f, %+f, %+f\r\n", att.x, att.y, att.z, omega.x, omega.y, omega.z);
+			printf("ATT: %+5.2f, %+5.2f, %+5.2f  Omega: %+6.2f, %+6.2f, %+6.2f\r\n",
+						ToDeg(att.x), ToDeg(att.y), ToDeg(att.z), ToDeg(omega.x), ToDeg(omega.y), ToDeg(omega.z));
 			break;
 			
 			case 'c':
@@ -228,11 +250,11 @@ static void top_menu_branch(uint8_t command)
 			break;
 			
 			default:
-			printf("invalid command\r\n");
+			printf("> invalid command\r\n");
 			input_detect = 0;
 			break;
 		}
-		p_flg = 0;
+		time.print = 0;
 	}
 }
 
@@ -259,42 +281,43 @@ static void att_gain_menu_branch(uint8_t command)
 		break;
 		
 		default:
-		printf("invalid command\r\n");
+		printf("> invalid command\r\n");
 		break;
 	}
 }
 
 static void att_axis_gain_menu_branch(uint8_t command)
 {
-	float p = 0, i = 0, d = 0;
+	/* Add get gain function */
+	
 	switch(command){
 		case 'd':
-		printf("P: %f I: %f D: %f\r\n", p, i, d);
+		printf("> P: %f I: %f D: %f\r\n", att_p, att_i, att_d);
 		break;
 		
 		case '1':
-		printf("P Gain is %f, input new value.\r\n", p);
-		p = get_float_input();
+		printf("> P Gain is %f, input new value.\r\n", att_p);
+		inputValiable = &att_p;
 		break;
 		
 		case '2':
-		printf("I Gain is %f, input new value.\r\n", i);
-		i = get_float_input();
+		printf("> I Gain is %f, input new value.\r\n", att_i);
+		inputValiable = &att_i;
 		break;
 		
 		case '3':
-		printf("D Gain is %f, input new value.\r\n", d);
-		d = get_float_input();
+		printf("> D Gain is %f, input new value.\r\n", att_d);
+		inputValiable = &att_d;
 		break;
 		
 		case 's':
 		/* not implemtented */
-		printf("Not implemtented!\r\n");
+		printf("> Not implemtented!\r\n");
 		break;
 		
 		case 'r':
 		/* not implemtented */
-		printf("Not implemtented!\r\n");
+		printf("> Not implemtented!\r\n");
 		break;
 		
 		case 'e':
@@ -302,39 +325,38 @@ static void att_axis_gain_menu_branch(uint8_t command)
 		break;
 		
 		default:
-		printf("invalid command\r\n");
+		printf("> invalid command\r\n");
 		break;
 	}
+	input = 0;
 }
 
 static void ahrs_gain_menu_branch(uint8_t command)
 {
-	float kp, ki, kp_yaw, ki_yaw;
-	AHRS_get_gain(&kp, &kp_yaw, &ki, &ki_yaw);
 	
 	switch(command){
 		case 'd':
-		printf("RollPitch: %f, %f, Yaw: %f, %f\r\n", kp, ki, kp_yaw, ki_yaw);
+		printf("> RollPitch: %f, %f, Yaw: %f, %f\r\n", kp, ki, kp_yaw, ki_yaw);
 		break;
 		
 		case '1':
-		printf("R&P P Gain is %f, input new value.\r\n", kp);
-		kp = get_float_input();
+		printf("> R&P P Gain is %f, input new value.\r\n", kp);
+		inputValiable = &kp;
 		break;
 		
 		case '2':
-		printf("R&P I Gain is %f, input new value.\r\n", ki);
-		ki = get_float_input();
+		printf("> R&P I Gain is %f, input new value.\r\n", ki);
+		inputValiable = &ki;
 		break;
 		
 		case '3':
-		printf("Yaw P Gain is %f, input new value.\r\n", kp_yaw);
-		kp_yaw = get_float_input();
+		printf("> Yaw P Gain is %f, input new value.\r\n", kp_yaw);
+		inputValiable = &kp_yaw;
 		break;
 		
 		case '4':
-		printf("Yaw I Gain is %f, input new value.\r\n", ki_yaw);
-		ki_yaw = get_float_input();
+		printf("> Yaw I Gain is %f, input new value.\r\n", ki_yaw);
+		inputValiable = &ki_yaw;
 		break;
 		
 		case 's':
@@ -342,7 +364,7 @@ static void ahrs_gain_menu_branch(uint8_t command)
 		storage_set_param(AHRS_ROLLPITCH_I, ki);
 		storage_set_param(AHRS_YAW_P, kp_yaw);
 		storage_set_param(AHRS_YAW_I, ki_yaw);
-		printf("Saved!\r\n");
+		printf("> Saved!\r\n");
 		break;
 		
 		case 'r':
@@ -350,7 +372,7 @@ static void ahrs_gain_menu_branch(uint8_t command)
 		ki = storage_get_param(AHRS_ROLLPITCH_I);
 		kp_yaw = storage_get_param(AHRS_YAW_P);
 		ki_yaw = storage_get_param(AHRS_YAW_I);
-		printf("Restore Parameters.\r\n");
+		printf("> Restore Parameters.\r\n");
 		break;
 		
 		case 'e':
@@ -358,9 +380,57 @@ static void ahrs_gain_menu_branch(uint8_t command)
 		break;
 		
 		default:
-		printf("invalid command\r\n");
+		printf("> invalid command\r\n");
 		break;
 	}
-	AHRS_set_gain(kp, kp_yaw, ki, ki_yaw);
+	AHRS_set_gain(kp, ki, kp_yaw, ki_yaw);
+	input = 0;
 }
+
+/* Get user input as float value */
+/* Return input start or end status */
+static uint8_t get_float_input(uint8_t inputChar)
+{
+	static uint8_t inputStr[32];
+	static uint8_t index = 0;
+	
+	if(inputValiable == NULL){
+		printf("> inputValiable is NULL\r\n");
+		return 0;
+	}
+	
+	switch(inputChar){
+		case '\b':
+			if(index > 0){
+				inputStr[index - 1] = 0;
+				index --;
+				putch('\b');
+				putch(' ');
+				putch('\b');
+			}
+			return 1; // Input continuous
+			
+		//case '\r':
+		case '\n':
+			putch('\r');
+			putch('\n');
+			*(float *)inputValiable = (float)atof((const char *)inputStr);
+			printf("> Input is %f\n", *(float *)inputValiable);
+			
+			/* Valiables Initialize */
+			inputValiable = NULL;
+			memset(inputStr, 0, sizeof(inputStr));
+			index = 0;
+			input_detect = 0;
+			return 0; // Input end
+			
+		default:
+			putch(inputChar);
+			inputStr[index] = inputChar;
+			index ++;
+			return 1; // Input continuous
+	}
+}
+
+
 

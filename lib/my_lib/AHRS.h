@@ -7,14 +7,6 @@
 #include "parameters.h"
 #include "timer.h"
 
-#define GRAVITY 9.767f
-
-#define DEG_TO_RAD 0.017453292519943295769236907684886f
-#define RAD_TO_DEG 57.295779513082320876798154814105f
-
-#define ToRad(x) (x * DEG_TO_RAD)
-#define ToDeg(x) (x * RAD_TO_DEG)
-
 extern volatile timeFlg time;
 
 void AHRS_Init(void);
@@ -49,11 +41,6 @@ void AHRS_get_euler(Vector3f *att); // get euler angle from DCM
 
 float AHRS_heading(Vector3f from); // get heading(Yaw) that corrected leaning
 
-// Default DCM parameters
-#define Kp_ROLLPITCH 1.4f
-#define Ki_ROLLPITCH 0.0001f
-#define Kp_YAW 3.0f
-#define Ki_YAW 0.001f
 
 /* Calibration Data */
 /* Mag calibration data */

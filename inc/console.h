@@ -5,6 +5,7 @@
 //Console control functions
 
 #include "mcu.h"
+#include "timer.h"
 
 typedef struct __menu{
 	uint8_t command;
@@ -12,7 +13,7 @@ typedef struct __menu{
 	void (*run)(void);
 } Menu;
 
-extern uint8_t p_flg;
+extern volatile timeFlg time;
 
 void console_init(void);
 void console_run(void);

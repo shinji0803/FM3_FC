@@ -20,7 +20,6 @@ static uint8_t check_gyro_calib_data(Vector3f *g);
 
 static Vector3f rawG = { 0.0f, 0.0f, 0.0f}, rawA = { 0.0f, 0.0f, 0.0f}, rawM = { 0.0f, 0.0f, 0.0f};
 static Vector3f scaledG = { 0.0f, 0.0f, 0.0f}, scaledA = { 0.0f, 0.0f, 0.0f};
-//static Vector3f scaledM = { 0.0f, 0.0f, 0.0f};
 static float mag_heading = 0.0f;
 
 //DCM Parameter
@@ -357,17 +356,6 @@ void AHRS_get_euler(Vector3f *att)
 }
 
 /* Move from LSM303DLH library */
-// Returns the number of degrees from the From vector projected into
-// the horizontal plane is away from north.
-// 
-// Description of heading algorithm: 
-// Shift and scale the magnetic reading based on calibration data to
-// to find the North vector. Use the acceleration readings to
-// determine the Down vector. The cross product of North and Down
-// vectors is East. The vectors East and North form a basis for the
-// horizontal plane. The From vector is projected into the horizontal
-// plane and the angle between the projected vector and north is
-// returned.
 float AHRS_heading(Vector3f from)
 {
 	Vector3f temp_a, temp_m;

@@ -29,6 +29,7 @@ extern volatile timeFlg time;
 uint8_t p_flg;
 
 int32_t main(void){
+	uint32_t now = 0, old_update = 0;
 	
 	//Initialize start
 	conio_init(57600UL);
@@ -49,12 +50,24 @@ int32_t main(void){
 	printf("Initialize OK.\r\n");
 	//Initialize complete
 	
+	AHRS_Init();
 	console_init();
 	
 	while(1){
 		
 		console_run();
-		
+			
+		if(time.flg_100hz == 1){
+			time.flg_100hz = 0;
+			AHRS_read_imu();
+			
+			now = get_micros();
+			AHRS_dcm_update((now - old_update) / 1000000.f);
+			old_update = now;
+			
+			AHRS_dcm_normalize();
+			AHRS_drift_correction();
+		}
 	} 
 }
 
@@ -73,7 +86,6 @@ inline void loop_1hz(){
 
 inline void loop_20hz(){
 	if(time.calibrate != 0) FM3_GPIO->PDORF_f.P3 = ~FM3_GPIO->PDORF_f.P3;
-	p_flg = 1;
 }
 
 inline void loop_50hz(){

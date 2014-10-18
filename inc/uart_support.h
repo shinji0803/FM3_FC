@@ -120,7 +120,6 @@ extern UartDev_IOB UartDev[];
 /* Funcion Prototypes */
 extern void conio_init(uint32_t baudrate);
 extern int32_t conio_available(void);
-extern float get_float_input(void);
 
 extern void putch(uint8_t c);
 extern uint8_t getch(void);

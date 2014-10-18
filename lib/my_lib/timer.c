@@ -62,6 +62,7 @@ void DT_Handler(void){	//DTŠ„ž‚Ýƒnƒ“ƒhƒ‰: 0.001sec–ˆ
 	
 	if(counter_20hz >= 50){	//20Hz : •\Ž¦ŽüŠú
 		time.flg_20hz = 1;
+		time.print = 1;
 		loop_20hz();
 		counter_20hz = 0;
 	}

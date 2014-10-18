@@ -45,14 +45,10 @@ const Gain_t Att_Gain[] = {
 float storage_get_param(ParamIndex_t index)
 {
 	uint16_t temp_add;
-	if(index < AHRS_GAIN_END){
-		temp_add = AHRS_Gain[index].add;
-		return read_float(temp_add);
-	}
-	else{
-		temp_add = AHRS_Gain[index - 4 - 1].add;
-		return read_float(temp_add);
-	}	
+	if(index < AHRS_GAIN_END) temp_add = AHRS_Gain[index].add;
+	else temp_add = AHRS_Gain[index - 4 - 1].add;
+
+	return read_float(temp_add);
 }
 
 void storage_set_param(ParamIndex_t index, float v)

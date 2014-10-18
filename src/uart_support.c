@@ -27,14 +27,6 @@ int32_t conio_available(void)
 	//return 0;
 }
 
-float get_float_input(void)
-{
-	uint8_t data[64];
-	
-	cgets((char *)data, sizeof(data));
-	
-	return atof((const char *)data);
-}
 
 /**************************************************************************/
 /*! 
