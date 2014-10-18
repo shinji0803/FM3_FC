@@ -2,7 +2,7 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include "mcu.h"
+#include "hw_config.h"
 
 //SysTickタイマの設定（時間計測用）
 void Init_timer(void);

@@ -1,6 +1,12 @@
 
 #include "mavlink_support.h"
 
+#include <stdarg.h>
+
+#include "UartDev.h"
+#include "mavlink.h"
+#include "timer.h"
+
 static UartDev_IOB *mavlink;
 mavlink_message_t msg;
 

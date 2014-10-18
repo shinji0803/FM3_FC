@@ -1,6 +1,12 @@
 
 #include "PX4FLOW.h"
 
+#include <string.h>
+
+#include "i2c.h"
+#include "rc_io.h"
+#include "fram.h"
+
 static uint8_t data[64];
 static flow_data *flow;
 

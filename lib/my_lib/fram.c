@@ -1,6 +1,9 @@
 
 #include "fram.h"
 
+#include "hw_config.h"
+#include "parameters.h"
+
 extern I2cDev_IOB I2cDev[];
 I2cDev_IOB *fram;
 

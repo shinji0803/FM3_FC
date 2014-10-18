@@ -1,6 +1,10 @@
 
 #include "i2c.h"
 
+#include <stdio.h>
+
+#include "hw_config.h"
+
 extern I2cDev_IOB I2cDev[];
 I2cDev_IOB *i2c;
 

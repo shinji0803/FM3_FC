@@ -1,9 +1,7 @@
 #ifndef LSM303DLH_h
 #define LSM303DLH_h
 
-#include "hw_config.h"
-#include "param.h"
-#include "myMath.h"
+#include "parameters.h"
 
 // register addresses
 

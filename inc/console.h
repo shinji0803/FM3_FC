@@ -2,13 +2,9 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-//コンソールとか　いわゆるCLI
+//Console control functions
 
-#include "uart_support.h"
-#include "param.h"
-#include "fram.h"
-
-#include "AHRS.h"
+#include "mcu.h"
 
 typedef struct __menu{
 	uint8_t command;

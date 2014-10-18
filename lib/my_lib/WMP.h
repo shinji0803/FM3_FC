@@ -3,10 +3,8 @@
 #define WMP_H
 
 //Wii Motion Plus 
-#include <string.h>
 
-#include "i2c.h"
-#include "param.h"
+#include "parameters.h"
 
 #define WMP_CONF_ADD 0x53
 #define WMP_ADD 0x52

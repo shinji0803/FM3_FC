@@ -2,16 +2,10 @@
 #ifndef _MAVLINK_SUP_DEF_H_
 #define _MAVLINK_SUP_DEF_H_
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
+/* Support functions for Mavlink command */
 
 #include "hw_config.h"
-#include "param.h"
-#include "UartDev.h"
-#include "timer.h"
-#include "mavlink.h"
+#include "parameters.h"
 
 int32_t Mavlink_port_init(uint8_t ch, uint32_t baudrate);
 
@@ -27,4 +21,5 @@ void Mavlink_debug_vect_send(uint8_t *name, Vector3f *v);
 void Mavlink_rx_check(void);
 
 void Mavlink_printf(const char* format, ...);
+
 #endif

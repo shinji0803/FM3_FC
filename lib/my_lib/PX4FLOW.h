@@ -3,12 +3,8 @@
 #define PX4_FLOW_H
 
 //PX4 Flow‚Ìƒf[ƒ^ˆ—•”•ª
-#include <string.h>
 
-#include "i2c.h"
-#include "rc_io.h"
-#include "fram.h"
-#include "param.h"
+#include "parameters.h"
 
 #define PX4F_ADD 0x42
 #define PX4F_BAUD 400000

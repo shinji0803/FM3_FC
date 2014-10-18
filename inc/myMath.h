@@ -2,11 +2,11 @@
 #ifndef MYMATH_H
 #define MYMATH_H
 
-/* Math functions for AHRS */
+/* Original Math functions */
 
 #include <Math.h>
 
-#include "param.h"
+#include "parameters.h"
 
 #define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
@@ -17,4 +17,5 @@ void	Vector_Add(Vector3f *out, const Vector3f *v1, const Vector3f *v2);
 void	Matrix_Multiply(const Matrix3f *m1, const Matrix3f *m2, Matrix3f *out);
 void	Matrix_Vector_Multiply(const Matrix3f *m, const Vector3f *v, Vector3f *out);
 void	Vector_Normalize(Vector3f *a);
+
 #endif

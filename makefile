@@ -181,7 +181,8 @@ CFILES = \
  $(SOURCE)/uart_support.c		\
  $(SOURCE)/console.c			\
  $(SOURCE)/myMath.c				\
- $(SOURCE)/mavlink_support.c
+ $(SOURCE)/mavlink_support.c	\
+ $(SOURCE)/parameters.c
 
 
 #/*----- MultiFunctionSerial(MFS) library PATH -----*/	

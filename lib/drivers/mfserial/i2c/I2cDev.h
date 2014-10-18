@@ -6,6 +6,8 @@
 #ifndef _I2CDEV_H_
 #define _I2CDEV_H_
 
+#include "hw_config.h"
+
 /*
  * Device Defines
  */

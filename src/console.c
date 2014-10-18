@@ -1,6 +1,11 @@
 
 #include "console.h"
 
+#include "uart_support.h"
+#include "parameters.h"
+#include "rc_io.h"
+#include "AHRS.h"
+
 static Vector3f att, omega;
 static uint16_t rcInput[8];
 static uint8_t menu_flg = 0, input = 0, input_detect = 0;
@@ -190,7 +195,7 @@ static void att_ctrl_axis_gain_menu(void)
 
 static void top_menu_branch(uint8_t command)
 {
-	uint8_t i = 0;
+	//uint8_t i = 0;
 	
 	if(p_flg == 1){
 	/*
@@ -261,39 +266,35 @@ static void att_gain_menu_branch(uint8_t command)
 
 static void att_axis_gain_menu_branch(uint8_t command)
 {
-	Gain g = { 0, 0, 0, 24, 28, 32};
+	float p = 0, i = 0, d = 0;
 	switch(command){
 		case 'd':
-		printf("P: %f I: %f D: %f\r\n", g.p_gain, g.i_gain, g.d_gain);
+		printf("P: %f I: %f D: %f\r\n", p, i, d);
 		break;
 		
 		case '1':
-		printf("P Gain is %f, input new value.\r\n", g.p_gain);
-		g.p_gain = get_float_input();
+		printf("P Gain is %f, input new value.\r\n", p);
+		p = get_float_input();
 		break;
 		
 		case '2':
-		printf("I Gain is %f, input new value.\r\n", g.i_gain);
-		g.i_gain = get_float_input();
+		printf("I Gain is %f, input new value.\r\n", i);
+		i = get_float_input();
 		break;
 		
 		case '3':
-		printf("D Gain is %f, input new value.\r\n", g.d_gain);
-		g.d_gain = get_float_input();
+		printf("D Gain is %f, input new value.\r\n", d);
+		d = get_float_input();
 		break;
 		
 		case 's':
-		write_float(g.p_add, g.p_gain);
-		write_float(g.i_add, g.i_gain);
-		write_float(g.d_add, g.d_gain);
-		printf("Saved!\r\n");
+		/* not implemtented */
+		printf("Not implemtented!\r\n");
 		break;
 		
 		case 'r':
-		g.p_gain = read_float(g.p_add);
-		g.i_gain = read_float(g.i_add);
-		g.d_gain = read_float(g.d_add);
-		printf("Restore Parameters.\r\n");
+		/* not implemtented */
+		printf("Not implemtented!\r\n");
 		break;
 		
 		case 'e':
@@ -308,47 +309,47 @@ static void att_axis_gain_menu_branch(uint8_t command)
 
 static void ahrs_gain_menu_branch(uint8_t command)
 {
-	Gain rp, y;
-	AHRS_get_gain(&rp, &y);
+	float kp, ki, kp_yaw, ki_yaw;
+	AHRS_get_gain(&kp, &kp_yaw, &ki, &ki_yaw);
 	
 	switch(command){
 		case 'd':
-		printf("R&P: %f, %f, Y: %f, %f\r\n", rp.p_gain, rp.i_gain, y.p_gain, y.i_gain);
+		printf("RollPitch: %f, %f, Yaw: %f, %f\r\n", kp, ki, kp_yaw, ki_yaw);
 		break;
 		
 		case '1':
-		printf("R&P P Gain is %f, input new value.\r\n", rp.p_gain);
-		rp.p_gain = get_float_input();
+		printf("R&P P Gain is %f, input new value.\r\n", kp);
+		kp = get_float_input();
 		break;
 		
 		case '2':
-		printf("R&P I Gain is %f, input new value.\r\n", rp.i_gain);
-		rp.i_gain = get_float_input();
+		printf("R&P I Gain is %f, input new value.\r\n", ki);
+		ki = get_float_input();
 		break;
 		
 		case '3':
-		printf("Yaw P Gain is %f, input new value.\r\n", y.p_gain);
-		y.p_gain = get_float_input();
+		printf("Yaw P Gain is %f, input new value.\r\n", kp_yaw);
+		kp_yaw = get_float_input();
 		break;
 		
 		case '4':
-		printf("Yaw I Gain is %f, input new value.\r\n", y.i_gain);
-		y.i_gain = get_float_input();
+		printf("Yaw I Gain is %f, input new value.\r\n", ki_yaw);
+		ki_yaw = get_float_input();
 		break;
 		
 		case 's':
-		write_float(RP_P_ADD, rp.p_gain);
-		write_float(RP_I_ADD, rp.i_gain);
-		write_float(Y_P_ADD, y.p_gain);
-		write_float(Y_I_ADD, y.i_gain);
+		storage_set_param(AHRS_ROLLPITCH_P, kp);
+		storage_set_param(AHRS_ROLLPITCH_I, ki);
+		storage_set_param(AHRS_YAW_P, kp_yaw);
+		storage_set_param(AHRS_YAW_I, ki_yaw);
 		printf("Saved!\r\n");
 		break;
 		
 		case 'r':
-		rp.p_gain = read_float(RP_P_ADD);
-		rp.i_gain = read_float(RP_I_ADD);
-		y.p_gain = read_float(Y_P_ADD);
-		y.i_gain = read_float(Y_I_ADD);
+		kp = storage_get_param(AHRS_ROLLPITCH_P);
+		ki = storage_get_param(AHRS_ROLLPITCH_I);
+		kp_yaw = storage_get_param(AHRS_YAW_P);
+		ki_yaw = storage_get_param(AHRS_YAW_I);
 		printf("Restore Parameters.\r\n");
 		break;
 		
@@ -360,6 +361,6 @@ static void ahrs_gain_menu_branch(uint8_t command)
 		printf("invalid command\r\n");
 		break;
 	}
-	AHRS_set_gain(&rp, &y);
+	AHRS_set_gain(kp, kp_yaw, ki, ki_yaw);
 }
 

@@ -5,13 +5,7 @@
 //FRAM用の関数
 //MB85RC16用　容量2048×8bit
 
-#include <stdio.h>
-
-#include "mcu.h"
 #include "I2cDev.h"
-#include "clock_def.h"
-
-#include "param.h"
 
 extern I2cDev_IOB I2cDev[];
 extern I2cDev_IOB *fram;

@@ -1,6 +1,17 @@
 
 #include "AHRS.h"
 
+#include <Math.h>
+
+#include "hw_config.h"
+#include "myMath.h"
+#include "timer.h"
+
+#include "PX4FLOW.h"
+#include "LSM303DLH.h"
+#include "WMP.h"
+
+
 static Matrix3f dcm_matrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 static Vector3f gyroOffset;
 
@@ -21,7 +32,9 @@ static Vector3f errorRollPitch = { 0.0f, 0.0f, 0.0f};
 static Vector3f errorYaw = { 0.0f, 0.0f, 0.0f};
 
 //AHRS Gains
-static Gain rp = {Kp_ROLLPITCH, Ki_ROLLPITCH, 0, 0, 4, 8}, y = {Kp_YAW, Ki_YAW, 0, 12, 16, 20};
+static float Kp, Kp_yaw, Ki, Ki_yaw;
+
+extern volatile timeFlg time;
 
 void AHRS_Init(void)
 {
@@ -132,13 +145,9 @@ void AHRS_read_imu(void)
 	/* Acc read */
 	readAcc(&rawA);
 	rawA.x *= -1;
-	//rawA.y *= -1;
-	//rawA.z *= -1;
-	/* Acc read end */
 	
 	/* Mag read */
 	readMag(&rawM);
-	/* Mag read end */
 }
 
 void AHRS_dcm_update(float dt)
@@ -161,18 +170,6 @@ void AHRS_dcm_update(float dt)
 	dcm_update_matrix.c.x = -dt * omega_vector.y;
 	dcm_update_matrix.c.y = dt * omega_vector.x;
 	dcm_update_matrix.c.z = 0;
-	
-	/*
-	dcm_update_matrix.a.x = 0;
-	dcm_update_matrix.a.y = -dt * scaledG.z;
-	dcm_update_matrix.a.z = dt * scaledG.y;
-	dcm_update_matrix.b.x = dt * scaledG.z;
-	dcm_update_matrix.b.y = 0;
-	dcm_update_matrix.b.z = -dt * scaledG.x;
-	dcm_update_matrix.c.x = -dt * scaledG.y;
-	dcm_update_matrix.c.y = dt * scaledG.x;
-	dcm_update_matrix.c.z = 0;
-	*/
 	
 	Matrix_Multiply(&dcm_matrix, &dcm_update_matrix, &temp_matrix);
 	
@@ -233,9 +230,9 @@ void AHRS_drift_correction(void)
 	accel_weight = constrain(1.0f - 2.0f * fabsf(1.0f - accel_magnitude), 0, 1.0f);
 	
 	Vector_Cross_Product(&errorRollPitch, &scaledA, &dcm_matrix.c);
-	Vector_Scale(&omega_P, &errorRollPitch, rp.p_gain * accel_weight);
+	Vector_Scale(&omega_P, &errorRollPitch, Kp * accel_weight);
 	
-	Vector_Scale(&scaled_omega_I, &errorRollPitch, rp.i_gain * accel_weight);
+	Vector_Scale(&scaled_omega_I, &errorRollPitch, Ki * accel_weight);
 	Vector_Add(&omega_I, &omega_I, &scaled_omega_I);
 	
 	/* YAW */
@@ -244,35 +241,35 @@ void AHRS_drift_correction(void)
 	errorCourse = (dcm_matrix.a.x * mag_heading_y) - (dcm_matrix.b.x * mag_heading_x);
 	Vector_Scale(&errorYaw, &dcm_matrix.c, errorCourse);
   
-	Vector_Scale(&scaled_omega_P, &errorYaw, y.p_gain);
+	Vector_Scale(&scaled_omega_P, &errorYaw, Kp_yaw);
 	Vector_Add(&omega_P, &omega_P, &scaled_omega_P);
   
-	Vector_Scale(&scaled_omega_I, &errorYaw, y.i_gain);
+	Vector_Scale(&scaled_omega_I, &errorYaw, Ki_yaw);
 	Vector_Add(&omega_I, &omega_I, &scaled_omega_I);
 }
 
-void AHRS_get_gain(Gain *RandP, Gain *Y)
+void AHRS_get_gain(float *tempKp, float *tempKi, float *tempKp_yaw, float *tempKi_yaw)
 {
-	RandP->p_gain = rp.p_gain;
-	RandP->i_gain = rp.i_gain;
-	Y->p_gain = y.p_gain;
-	Y->i_gain = y.i_gain;
+	*tempKp = Kp;
+	*tempKi = Ki;
+	*tempKp_yaw = Kp_yaw;
+	*tempKi_yaw = Ki_yaw;
 }
 
-void AHRS_set_gain(Gain *RandP, Gain *Y)
+void AHRS_set_gain(float tempKp, float tempKi, float tempKp_yaw, float tempKi_yaw)
 {
-	rp.p_gain = RandP->p_gain;
-	rp.i_gain = RandP->i_gain;
-	y.p_gain = Y->p_gain;
-	y.i_gain = Y->i_gain;
+	Kp = tempKp;
+	Ki = tempKi;
+	Kp_yaw = tempKp_yaw;
+	Ki_yaw = tempKi_yaw;
 }
 
 void AHRS_load_gain(void)
 {
-	rp.p_gain = read_float(rp.p_add);
-	rp.i_gain = read_float(rp.i_add);
-	y.p_gain = read_float(y.p_add);
-	y.i_gain = read_float(y.i_add);
+	Kp = storage_get_param(AHRS_ROLLPITCH_P);
+	Ki = storage_get_param(AHRS_ROLLPITCH_I);
+	Kp_yaw = storage_get_param(AHRS_YAW_P);
+	Ki_yaw = storage_get_param(AHRS_YAW_I);
 }
 
 void AHRS_get_gyro(Vector3f *g)

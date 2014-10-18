@@ -1,9 +1,13 @@
 
 #include "LSM303DLH.h"
-#include "i2c.h"
-#include "param.h"
 
 #include <math.h>
+
+#include "hw_config.h"
+#include "i2c.h"
+#include "parameters.h"
+#include "myMath.h"
+
 
 // Defines ////////////////////////////////////////////////////////////////
 

@@ -4,18 +4,8 @@
 
 /* Attitude Heading Reference System */
 
-#include <Math.h>
-#include "hw_config.h"
-
-#include "myMath.h"
-#include "param.h"
+#include "parameters.h"
 #include "timer.h"
-#include "i2c.h"
-#include "fram.h"
-
-#include "PX4FLOW.h"
-#include "LSM303DLH.h"
-#include "WMP.h"
 
 #define GRAVITY 9.767f
 
@@ -36,9 +26,9 @@ void AHRS_dcm_update(float dt); // update DCM
 void AHRS_dcm_normalize(void); // normalize DCM
 void AHRS_drift_correction(void); // gyro drift correction
 // get AHRS gain
-void AHRS_get_gain(Gain *RandP, Gain *Y);
+void AHRS_get_gain(float *tempKp, float *tempKi, float *tempKp_yaw, float *tempKi_yaw);
 // set AHRS gain
-void AHRS_set_gain(Gain *RandP, Gain *Y);
+void AHRS_set_gain(float tempKp, float tempKi, float tempKp_yaw, float tempKi_yaw);
 // get AHRS gain from FRAM
 void AHRS_load_gain(void);
 

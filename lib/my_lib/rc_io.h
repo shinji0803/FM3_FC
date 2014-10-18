@@ -5,7 +5,7 @@
 //RC“üo—ÍŠÖ”
 //PWM‚ğ“Ç‚ŞCPWM‚ğo—Í‚·‚é etc...
 
-#include "mcu.h"
+#include "hw_config.h"
 
 #define USE_PPM
 

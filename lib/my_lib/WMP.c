@@ -1,6 +1,10 @@
 
 #include "WMP.h"
 
+#include <string.h>
+
+#include "i2c.h"
+
 static uint8_t wmp_data[32];
 
 void WMP_init(void)
