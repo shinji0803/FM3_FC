@@ -12,28 +12,28 @@
 #include "WMP.h"
 
 
-static Matrix3f dcm_matrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-static Vector3f gyroOffset;
+static Matrix3f _dcm_matrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+static Vector3f _gyroOffset;
+
+static Vector3f _rawG = { 0.0f, 0.0f, 0.0f}, _rawA = { 0.0f, 0.0f, 0.0f}, _rawM = { 0.0f, 0.0f, 0.0f};
+static Vector3f _scaledG = { 0.0f, 0.0f, 0.0f}, _scaledA = { 0.0f, 0.0f, 0.0f};
+static float _mag_heading = 0.0f;
+
+//DCM Parameter
+static Vector3f _omega = { 0.0f, 0.0f, 0.0f};
+static Vector3f _omega_vector = { 0.0f, 0.0f, 0.0f};
+static Vector3f _omega_P = { 0.0f, 0.0f, 0.0f};
+static Vector3f _omega_I = { 0.0f, 0.0f, 0.0f};
+static Vector3f _errorRollPitch = { 0.0f, 0.0f, 0.0f};
+static Vector3f _errorYaw = { 0.0f, 0.0f, 0.0f};
+
+//AHRS Gains
+static float _Kp, _Kp_yaw, _Ki, _Ki_yaw;
+
+extern volatile timeFlg time;
 
 static void init_rotation_matrix(Matrix3f *m, float yaw, float pitch, float roll);
 static uint8_t check_gyro_calib_data(Vector3f *g);
-
-static Vector3f rawG = { 0.0f, 0.0f, 0.0f}, rawA = { 0.0f, 0.0f, 0.0f}, rawM = { 0.0f, 0.0f, 0.0f};
-static Vector3f scaledG = { 0.0f, 0.0f, 0.0f}, scaledA = { 0.0f, 0.0f, 0.0f};
-static float mag_heading = 0.0f;
-
-//DCM Parameter
-static Vector3f omega = { 0.0f, 0.0f, 0.0f};
-static Vector3f omega_vector = { 0.0f, 0.0f, 0.0f};
-static Vector3f omega_P = { 0.0f, 0.0f, 0.0f};
-static Vector3f omega_I = { 0.0f, 0.0f, 0.0f};
-static Vector3f errorRollPitch = { 0.0f, 0.0f, 0.0f};
-static Vector3f errorYaw = { 0.0f, 0.0f, 0.0f};
-
-//AHRS Gains
-static float Kp, Kp_yaw, Ki, Ki_yaw;
-
-extern volatile timeFlg time;
 
 void AHRS_Init(void)
 {
@@ -88,11 +88,11 @@ void AHRS_Init(void)
 		
 	}
 	printf("\r\n");
-	gyroOffset.x = sum.x / 10.0f; 
-	gyroOffset.y = sum.y / 10.0f; 
-	gyroOffset.z = sum.z / 10.0f;
+	_gyroOffset.x = sum.x / 10.0f; 
+	_gyroOffset.y = sum.y / 10.0f; 
+	_gyroOffset.z = sum.z / 10.0f;
 	
-	printf("Gyro Offset ( %f, %f, %f)\r\n", gyroOffset.x, gyroOffset.y, gyroOffset.z);
+	printf("Gyro Offset ( %f, %f, %f)\r\n", _gyroOffset.x, _gyroOffset.y, _gyroOffset.z);
 	
 	//Initialize DCM Matrix
 	Vector3f att;
@@ -105,7 +105,7 @@ void AHRS_Init(void)
 	att.x = -atan2( temp2.y, temp2.z);
 	//Get Yaw
 	att.z = ToRad(AHRS_heading((Vector3f){0,1,0}));
-	init_rotation_matrix(&dcm_matrix, att.z, att.y, att.x);
+	init_rotation_matrix(&_dcm_matrix, att.z, att.y, att.x);
 	
 	time.calibrate = 0;
 }
@@ -126,27 +126,27 @@ void AHRS_read_imu(void)
 	
 	/* Gyro read */
 #ifdef USE_PX4F_GYRO	
-	px4f_get_gyro(&rawG);
+	px4f_get_gyro(&_rawG);
 #else
-	WMP_get_raw_gyro(&rawG);
+	WMP_get_raw_gyro(&_rawG);
 	WMP_get_gyro_mode(&slow_mode);
 #endif
 
-	rawG.x = rawG.x - gyroOffset.x;
-	rawG.y = -(rawG.y - gyroOffset.y); // Pitch reversed
-	rawG.z = rawG.z - gyroOffset.z;
+	_rawG.x = _rawG.x - _gyroOffset.x;
+	_rawG.y = -(_rawG.y - _gyroOffset.y); // Pitch reversed
+	_rawG.z = _rawG.z - _gyroOffset.z;
 	
-	if(((slow_mode >> 2) & 0x01) != 1) rawG.x *= 4.545454f; // When high speed mode, multiply value by (2000/440)
-	if(((slow_mode >> 1) & 0x01) != 1) rawG.y *= 4.545454f;
-	if(((slow_mode >> 0) & 0x01) != 1) rawG.z *= 4.545454f;
+	if(((slow_mode >> 2) & 0x01) != 1) _rawG.x *= 4.545454f; // When high speed mode, multiply value by (2000/440)
+	if(((slow_mode >> 1) & 0x01) != 1) _rawG.y *= 4.545454f;
+	if(((slow_mode >> 0) & 0x01) != 1) _rawG.z *= 4.545454f;
 	/* Gyro read end */
 	
 	/* Acc read */
-	readAcc(&rawA);
-	rawA.x *= -1;
+	readAcc(&_rawA);
+	_rawA.x *= -1;
 	
 	/* Mag read */
-	readMag(&rawM);
+	readMag(&_rawM);
 }
 
 void AHRS_dcm_update(float dt)
@@ -154,33 +154,33 @@ void AHRS_dcm_update(float dt)
 	Matrix3f dcm_update_matrix;
 	Matrix3f temp_matrix = {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}};
 	
-	AHRS_get_gyro(&scaledG);
-	AHRS_get_acc(&scaledA);
+	AHRS_get_gyro(&_scaledG);
+	AHRS_get_acc(&_scaledA);
 	
-	Vector_Add(&omega, &scaledG, &omega_I);
-	Vector_Add(&omega_vector, &omega, &omega_P);
+	Vector_Add(&_omega, &_scaledG, &_omega_I);
+	Vector_Add(&_omega_vector, &_omega, &_omega_P);
 	
 	dcm_update_matrix.a.x = 0;
-	dcm_update_matrix.a.y = -dt * omega_vector.z;
-	dcm_update_matrix.a.z = dt * omega_vector.y;
-	dcm_update_matrix.b.x = dt * omega_vector.z;
+	dcm_update_matrix.a.y = -dt * _omega_vector.z;
+	dcm_update_matrix.a.z = dt * _omega_vector.y;
+	dcm_update_matrix.b.x = dt * _omega_vector.z;
 	dcm_update_matrix.b.y = 0;
-	dcm_update_matrix.b.z = -dt * omega_vector.x;
-	dcm_update_matrix.c.x = -dt * omega_vector.y;
-	dcm_update_matrix.c.y = dt * omega_vector.x;
+	dcm_update_matrix.b.z = -dt * _omega_vector.x;
+	dcm_update_matrix.c.x = -dt * _omega_vector.y;
+	dcm_update_matrix.c.y = dt * _omega_vector.x;
 	dcm_update_matrix.c.z = 0;
 	
-	Matrix_Multiply(&dcm_matrix, &dcm_update_matrix, &temp_matrix);
+	Matrix_Multiply(&_dcm_matrix, &dcm_update_matrix, &temp_matrix);
 	
-	dcm_matrix.a.x += temp_matrix.a.x;
-	dcm_matrix.a.y += temp_matrix.a.y;
-	dcm_matrix.a.z += temp_matrix.a.z;
-	dcm_matrix.b.x += temp_matrix.b.x;
-	dcm_matrix.b.y += temp_matrix.b.y;
-	dcm_matrix.b.z += temp_matrix.b.z;
-	dcm_matrix.c.x += temp_matrix.c.x;
-	dcm_matrix.c.y += temp_matrix.c.y;
-	dcm_matrix.c.z += temp_matrix.c.z;
+	_dcm_matrix.a.x += temp_matrix.a.x;
+	_dcm_matrix.a.y += temp_matrix.a.y;
+	_dcm_matrix.a.z += temp_matrix.a.z;
+	_dcm_matrix.b.x += temp_matrix.b.x;
+	_dcm_matrix.b.y += temp_matrix.b.y;
+	_dcm_matrix.b.z += temp_matrix.b.z;
+	_dcm_matrix.c.x += temp_matrix.c.x;
+	_dcm_matrix.c.y += temp_matrix.c.y;
+	_dcm_matrix.c.z += temp_matrix.c.z;
 }
 
 void AHRS_dcm_normalize(void)
@@ -189,24 +189,24 @@ void AHRS_dcm_normalize(void)
 	Matrix3f temp;
 	float renorm = 0.0f;
 	
-	error = -Vector_Dot_Product(&dcm_matrix.a, &dcm_matrix.b) * 0.5f;
+	error = -Vector_Dot_Product(&_dcm_matrix.a, &_dcm_matrix.b) * 0.5f;
 	
-	Vector_Scale(&temp.a, &dcm_matrix.b, error);
-	Vector_Scale(&temp.b, &dcm_matrix.a, error);
+	Vector_Scale(&temp.a, &_dcm_matrix.b, error);
+	Vector_Scale(&temp.b, &_dcm_matrix.a, error);
 	
-	Vector_Add(&temp.a, &temp.a, &dcm_matrix.a);
-	Vector_Add(&temp.b, &temp.b, &dcm_matrix.b);
+	Vector_Add(&temp.a, &temp.a, &_dcm_matrix.a);
+	Vector_Add(&temp.b, &temp.b, &_dcm_matrix.b);
 	
 	Vector_Cross_Product(&temp.c, &temp.a, &temp.b);
 	
 	renorm= 0.5f * (3 - Vector_Dot_Product(&temp.a, &temp.a));
-	Vector_Scale(&dcm_matrix.a, &temp.a, renorm);
+	Vector_Scale(&_dcm_matrix.a, &temp.a, renorm);
 	
 	renorm= 0.5f * (3 - Vector_Dot_Product(&temp.b, &temp.b));
-	Vector_Scale(&dcm_matrix.b, &temp.b, renorm);
+	Vector_Scale(&_dcm_matrix.b, &temp.b, renorm);
 	
 	renorm= 0.5f * (3 - Vector_Dot_Product(&temp.c, &temp.c));
-	Vector_Scale(&dcm_matrix.c, &temp.c, renorm);
+	Vector_Scale(&_dcm_matrix.c, &temp.c, renorm);
 }
 
 void AHRS_drift_correction(void)
@@ -221,106 +221,106 @@ void AHRS_drift_correction(void)
 	float accel_weight;
 	
 	/* calculate heading from mag */
-	mag_heading = ToRad(AHRS_heading((Vector3f){0,1,0}));
+	_mag_heading = ToRad(AHRS_heading((Vector3f){0,1,0}));
 	
 	/* Roll and Pitch */
-	accel_magnitude = sqrtf(scaledA.x * scaledA.x + scaledA.y * scaledA.y + scaledA.z * scaledA.z);
+	accel_magnitude = sqrtf(_scaledA.x * _scaledA.x + _scaledA.y * _scaledA.y + _scaledA.z * _scaledA.z);
 	accel_magnitude = accel_magnitude / GRAVITY;
 	accel_weight = constrain(1.0f - 2.0f * fabsf(1.0f - accel_magnitude), 0, 1.0f);
 	
-	Vector_Cross_Product(&errorRollPitch, &scaledA, &dcm_matrix.c);
-	Vector_Scale(&omega_P, &errorRollPitch, Kp * accel_weight);
+	Vector_Cross_Product(&_errorRollPitch, &_scaledA, &_dcm_matrix.c);
+	Vector_Scale(&_omega_P, &_errorRollPitch, _Kp * accel_weight);
 	
-	Vector_Scale(&scaled_omega_I, &errorRollPitch, Ki * accel_weight);
-	Vector_Add(&omega_I, &omega_I, &scaled_omega_I);
+	Vector_Scale(&scaled_omega_I, &_errorRollPitch, _Ki * accel_weight);
+	Vector_Add(&_omega_I, &_omega_I, &scaled_omega_I);
 	
 	/* YAW */
-	mag_heading_x = cosf(mag_heading);
-	mag_heading_y = sinf(mag_heading);
-	errorCourse = (dcm_matrix.a.x * mag_heading_y) - (dcm_matrix.b.x * mag_heading_x);
-	Vector_Scale(&errorYaw, &dcm_matrix.c, errorCourse);
+	mag_heading_x = cosf(_mag_heading);
+	mag_heading_y = sinf(_mag_heading);
+	errorCourse = (_dcm_matrix.a.x * mag_heading_y) - (_dcm_matrix.b.x * mag_heading_x);
+	Vector_Scale(&_errorYaw, &_dcm_matrix.c, errorCourse);
   
-	Vector_Scale(&scaled_omega_P, &errorYaw, Kp_yaw);
-	Vector_Add(&omega_P, &omega_P, &scaled_omega_P);
+	Vector_Scale(&scaled_omega_P, &_errorYaw, _Kp_yaw);
+	Vector_Add(&_omega_P, &_omega_P, &scaled_omega_P);
   
-	Vector_Scale(&scaled_omega_I, &errorYaw, Ki_yaw);
-	Vector_Add(&omega_I, &omega_I, &scaled_omega_I);
+	Vector_Scale(&scaled_omega_I, &_errorYaw, _Ki_yaw);
+	Vector_Add(&_omega_I, &_omega_I, &scaled_omega_I);
 }
 
 void AHRS_get_gain(float *tempKp, float *tempKi, float *tempKp_yaw, float *tempKi_yaw)
 {
-	*tempKp = Kp;
-	*tempKi = Ki;
-	*tempKp_yaw = Kp_yaw;
-	*tempKi_yaw = Ki_yaw;
+	*tempKp = _Kp;
+	*tempKi = _Ki;
+	*tempKp_yaw = _Kp_yaw;
+	*tempKi_yaw = _Ki_yaw;
 }
 
 void AHRS_set_gain(float tempKp, float tempKi, float tempKp_yaw, float tempKi_yaw)
 {
-	Kp = tempKp;
-	Ki = tempKi;
-	Kp_yaw = tempKp_yaw;
-	Ki_yaw = tempKi_yaw;
+	_Kp = tempKp;
+	_Ki = tempKi;
+	_Kp_yaw = tempKp_yaw;
+	_Ki_yaw = tempKi_yaw;
 }
 
 void AHRS_load_gain(void)
 {
-	Kp = storage_get_param(AHRS_ROLLPITCH_P);
-	Ki = storage_get_param(AHRS_ROLLPITCH_I);
-	Kp_yaw = storage_get_param(AHRS_YAW_P);
-	Ki_yaw = storage_get_param(AHRS_YAW_I);
+	_Kp = storage_get_param(AHRS_ROLLPITCH_P);
+	_Ki = storage_get_param(AHRS_ROLLPITCH_I);
+	_Kp_yaw = storage_get_param(AHRS_YAW_P);
+	_Ki_yaw = storage_get_param(AHRS_YAW_I);
 }
 
 void AHRS_get_gyro(Vector3f *g)
 {
 	//AHRS_get_raw_gyro(g);
 	
-	g->x = ToRad(rawG.x / GYRO_SCALE);
-	g->y = ToRad(rawG.y / GYRO_SCALE);
-	g->z = ToRad(rawG.z / GYRO_SCALE);
+	g->x = ToRad(_rawG.x / GYRO_SCALE);
+	g->y = ToRad(_rawG.y / GYRO_SCALE);
+	g->z = ToRad(_rawG.z / GYRO_SCALE);
 }
 
 void AHRS_get_raw_gyro(Vector3f *g)
 {
-	g->x = rawG.x;
-	g->y = rawG.y;
-	g->z = rawG.z;
+	g->x = _rawG.x;
+	g->y = _rawG.y;
+	g->z = _rawG.z;
 }
 
 void AHRS_get_omega(Vector3f *g)
 {
-	g->x = omega_vector.x;
-	g->y = omega_vector.y;
-	g->z = omega_vector.z;
+	g->x = _omega_vector.x;
+	g->y = _omega_vector.y;
+	g->z = _omega_vector.z;
 }
 
 void AHRS_get_acc(Vector3f *a)
 {
 	//AHRS_get_raw_acc(a);
-	a->x = (rawA.x - ACCEL_X_OFFSET) * ACCEL_X_SCALE;
-	a->y = (rawA.y - ACCEL_Y_OFFSET) * ACCEL_Y_SCALE;
-	a->z = (rawA.z - ACCEL_Z_OFFSET) * ACCEL_Z_SCALE;
+	a->x = (_rawA.x - ACCEL_X_OFFSET) * ACCEL_X_SCALE;
+	a->y = (_rawA.y - ACCEL_Y_OFFSET) * ACCEL_Y_SCALE;
+	a->z = (_rawA.z - ACCEL_Z_OFFSET) * ACCEL_Z_SCALE;
 }
 
 void AHRS_get_raw_acc(Vector3f *a)
 {
-	a->x = rawA.x;
-	a->y = rawA.y;
-	a->z = rawA.z;
+	a->x = _rawA.x;
+	a->y = _rawA.y;
+	a->z = _rawA.z;
 }
 
 void AHRS_get_mag(Vector3f *m)
 {
-	m->x = rawM.x;
-	m->y = rawM.y;
-	m->z = rawM.z;
+	m->x = _rawM.x;
+	m->y = _rawM.y;
+	m->z = _rawM.z;
 }
 
 void AHRS_get_raw_mag(Vector3f *m)
 {
-	m->x = rawM.x;
-	m->y = rawM.y;
-	m->z = rawM.z;
+	m->x = _rawM.x;
+	m->y = _rawM.y;
+	m->z = _rawM.z;
 }
 
 
@@ -350,9 +350,9 @@ void init_rotation_matrix(Matrix3f *m, float yaw, float pitch, float roll)
 
 void AHRS_get_euler(Vector3f *att)
 {
-	att->y = -asin(dcm_matrix.c.x);
-	att->x = atan2(dcm_matrix.c.y, dcm_matrix.c.z);
-	att->z = atan2(dcm_matrix.b.x, dcm_matrix.a.x);
+	att->y = -asin(_dcm_matrix.c.x);
+	att->x = atan2(_dcm_matrix.c.y, _dcm_matrix.c.z);
+	att->z = atan2(_dcm_matrix.b.x, _dcm_matrix.a.x);
 }
 
 /* Move from LSM303DLH library */

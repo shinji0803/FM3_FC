@@ -19,12 +19,16 @@ void wait(uint32_t length);
 //デュアルタイマの設定
 void Init_DT(void);
 
+// DualTimer2 Test
+void Init_DT2(void);
+void Start_DT2(void);
+uint32_t Stop_DT2(void);
+
 //デュアルタイマハンドラ内で実行する関数
 extern void loop_1hz(void);
 extern void loop_20hz(void);
 extern void loop_50hz(void);
 extern void loop_100hz(void);
-extern void loop_200hz(void);
 
 //各周期用のフラグ
 typedef struct timeFlg{

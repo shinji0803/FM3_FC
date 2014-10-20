@@ -22,21 +22,21 @@ inline void loop_1hz(void);
 inline void loop_20hz(void);
 inline void loop_50hz(void);
 inline void loop_100hz(void);
-inline void loop_200hz(void);
 
 extern volatile timeFlg time;
 
 uint8_t p_flg;
 
 int32_t main(void){
-	uint32_t now = 0, old_update = 0;
+	uint32_t dt = 0;
 	
 	//Initialize start
 	conio_init(57600UL);
 	Init_timer();
 	InitLED();
 	
-	rcin_enable(0); //RC In & Out port initialize
+	/* RC In & Out port initialize */
+	rcin_enable(0); 
 	rcout_enable(0);
 	rcout_enable(1);
 	rcout_enable(2);
@@ -45,6 +45,7 @@ int32_t main(void){
 	Init_i2c();
 	Init_fram();
 	Init_DT();
+	Init_DT2();
 	wait(100);
 	
 	printf("Initialize OK.\r\n");
@@ -61,9 +62,11 @@ int32_t main(void){
 			time.flg_100hz = 0;
 			AHRS_read_imu();
 			
-			now = get_micros();
-			AHRS_dcm_update((now - old_update) / 1000000.f);
-			old_update = now;
+			dt = Stop_DT2();
+			if(dt == 0) dt = 10000;
+			AHRS_dcm_update(dt / 1000000.f);
+			set_debug_msg("AHRS_UpdateRate = %d", dt);
+			Start_DT2();
 			
 			AHRS_dcm_normalize();
 			AHRS_drift_correction();
@@ -95,8 +98,3 @@ inline void loop_50hz(){
 inline void loop_100hz(){
 
 }
-
-inline void loop_200hz(){
-
-}
-

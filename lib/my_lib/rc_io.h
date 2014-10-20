@@ -2,8 +2,7 @@
 #ifndef RC_IO_H
 #define RC_IO_H
 
-//RC入出力関数
-//PWMを読む，PWMを出力する etc...
+//RC Input & Output Function
 
 #include "hw_config.h"
 
@@ -20,7 +19,7 @@
 
 #define MAX_CH 4
 
-//PWM読込設定関数
+/* PWM Input Initialize Function */
 void rcin_enable(uint8_t ch);
 
 #define IN1 FM3_BT0_PWC
@@ -33,7 +32,7 @@ void rcin_enable(uint8_t ch);
 #define IN8 FM3_BT7_PWC
 
 
-//PWM出力設定関数
+/* PWM Output Initialize Function */
 void rcout_enable(uint8_t ch);
 
 #define OUT1 FM3_BT8_PWM
@@ -45,17 +44,16 @@ void rcout_enable(uint8_t ch);
 #define OUT7 FM3_BT14_PWM
 #define OUT8 FM3_BT15_PWM
 
-
-//指定Chに指定パルス幅でPWM出力(ch = 1~8)
+/* Output PWM (ch = 1 ~ 8) */
 void rc_write(uint8_t ch, uint16_t pulse_usec);
 
-//指定ChのPWM入力パルス幅取得(ch = 1~8)
+/* Get PWM pulse width in usec (ch = 1 ~ 8) */
 uint16_t rc_read(uint8_t ch);
 
-//8ch分の入力パルス幅取得
+/* Get All channel PWM pulse width in usec */ 
 void rc_multiread(uint16_t *data);
 
-//指定ChのPWM出力パルス幅取得(ch = 1~8)
+/* Get Output PWM pulse width in usec(ch = 1~8) */
 uint16_t rcout_read(uint8_t ch);
 
 #endif

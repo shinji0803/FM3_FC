@@ -1,7 +1,7 @@
 
 #include "uart_support.h"
 
-static UartDev_IOB *conio;
+static UartDev_IOB *_conio;
 
 /* Initialize serial console */
 void conio_init(uint32_t baudrate)
@@ -10,20 +10,20 @@ void conio_init(uint32_t baudrate)
 	
 	ATTACH_MFS();
 	
-	conio = &UartDev[UART_MFS];
-	conio->Cfg.BitOrder = UartDev_BITORDER_LSB;
-	conio->Cfg.BufSize  = UART_BUFSIZE;
-	conio->Cfg.BaudRate = baudrate;
+	_conio = &UartDev[UART_MFS];
+	_conio->Cfg.BitOrder = UartDev_BITORDER_LSB;
+	_conio->Cfg.BufSize  = UART_BUFSIZE;
+	_conio->Cfg.BaudRate = baudrate;
 
 	//ret = conio->Init();
-	conio->Init();
+	_conio->Init();
 	
 	return;
 }
 
 int32_t conio_available(void)
 {
-	return conio->RxAvailable();
+	return _conio->RxAvailable();
 	//return 0;
 }
 
@@ -45,7 +45,7 @@ inline void putch(uint8_t data)
 	int32_t size = 1;
 	
 	while(1){
-		conio->BufTx(&txdata, &size, UartDev_FLAG_NONBLOCKING);
+		_conio->BufTx(&txdata, &size, UartDev_FLAG_NONBLOCKING);
 		if(size == 1) break;
 		size = 1;
 	}
@@ -65,7 +65,7 @@ uint8_t getch(void)
 	*/
 	uint8_t data;
 	int32_t size = 1;
-	conio->BufRx( &data, &size, UartDev_FLAG_NONBLOCKING);
+	_conio->BufRx( &data, &size, UartDev_FLAG_NONBLOCKING);
 	
 	if(size == 1) return data;
 	else return false;

@@ -18,4 +18,7 @@ extern volatile timeFlg time;
 void console_init(void);
 void console_run(void);
 
+/* set debug message */
+void set_debug_msg(const char* format, ...);
+
 #endif

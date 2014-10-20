@@ -33,14 +33,14 @@ static void initPort(){
 	FM3_GPIO->EPFR07 = FM3_GPIO->EPFR07 | 0x05000;
 }
 
-//スレーブアドレス計算
+/* calculate slave address */
 static uint32_t calc_slave_addr(uint16_t address){
 	uint16_t slave_addr;
 	slave_addr = (address >> 8) & 0x07;
-	return (uint32_t)slave_addr | 0x50; //1010000b + (アドレス上位3bit）
+	return (uint32_t)slave_addr | 0x50; //1010000b + (address high 3bit）
 }
 
-//多バイト書き込み
+/* Multibyte write */
 static void write_multibyte(uint16_t address, uint8_t byte_size, uint8_t *data){
 	uint8_t *data_p; 
 	uint8_t i = 0;
@@ -51,16 +51,13 @@ static void write_multibyte(uint16_t address, uint8_t byte_size, uint8_t *data){
 	
 	fram->Cfg.SlaveAddr = calc_slave_addr(address);
 	
-	data_tx[0] = (uint8_t)(address & 0xFF); //アドレス下位8bit
+	data_tx[0] = (uint8_t)(address & 0xFF); //Lower 8bit of address 
 	for( i = 0; i < byte_size; i++)	data_tx[i + 1] = *(data_p + i);
 	
 	size = (uint32_t)(byte_size + 1);
 	fram->DataTx(data_tx, &size);
 }
 
-//////////////////////
-// 各型の書き込み関数 //
-//////////////////////
 void write_byte(uint16_t address, uint8_t data){
 	write_multibyte(address, 1, &data);
 }
@@ -112,11 +109,11 @@ void write_float(uint16_t address, float data){
 	data_tx[3] = r.b[3];
 	write_multibyte(address, 4, data_tx);
 }
-/////////////////////////////
-// 各型の書き込み関数　ここまで //
-/////////////////////////////
 
-//多バイト読込
+
+/* FRAM read functions */
+
+/* Multibyte read funtion */
 static void read_multibyte(uint16_t address, uint8_t byte_size, uint8_t *data){
 	uint8_t data_tx[2];
 	uint8_t data_rx[10];
@@ -137,9 +134,6 @@ static void read_multibyte(uint16_t address, uint8_t byte_size, uint8_t *data){
 	return;
 }
 
-//////////////////
-// 各型の読込関数 //
-//////////////////
 uint8_t read_byte(uint16_t address){
 	uint8_t data_rx;
 	read_multibyte(address, 1, &data_rx);
@@ -202,7 +196,4 @@ float read_float(uint16_t address){
 	return (float)r.f;
 }
 
-//////////////////////////
-// 各型の読込関数　ここまで //
-//////////////////////////
 
