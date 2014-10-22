@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #include "uart_support.h"
+#include "scheduler.h"
 #include "parameters.h"
 #include "rc_io.h"
 #include "AHRS.h"
@@ -46,6 +47,7 @@ static const Menu top_menu_content[] = {
 	{'r', "read Radio", NULL},
 	{'c', "set Attitude Gain", NULL},
 	{'g', "set AHRS Gain", NULL},
+	{'l', "Print CPU Load", NULL},
 	{'d', "Print Debug Message", NULL}
 };
 static const uint8_t top_menu_content_size = sizeof(top_menu_content) / sizeof(top_menu_content[0]);
@@ -264,6 +266,10 @@ static void top_menu_branch(uint8_t command)
 				printf("> Debug: ");
 				printf("%s\r\n", _debug_msg);
 			}
+			break;
+			
+			case 'l':
+			printf("> Scheduler Load = %f\r\n", scheduler_load_average(10000));
 			break;
 			
 			default:

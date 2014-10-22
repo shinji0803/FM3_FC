@@ -13,7 +13,9 @@ static uint16_t _tick_counter;
 static uint32_t _task_time_allowed;
 static uint32_t _task_time_started;
 
+/* Total remain time when scheduler run */
 static uint32_t _spare_micros;
+/* Scheduler run count */
 static uint8_t _spare_ticks;
 
 
@@ -81,11 +83,12 @@ update_spare_ticks:
 	}
 }
 
-
+/* Return scheduler load */
 float scheduler_load_average(uint32_t tick_time_usec)
 {
 	if(_spare_ticks == 0) return 0.0f;
 	
+	/* average spare time = _spare_micros / _spare_ticks */
 	uint32_t used_time = tick_time_usec - (_spare_micros / _spare_ticks);
 	return used_time / (float)tick_time_usec;
 }
