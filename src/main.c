@@ -28,7 +28,7 @@ inline void loop_50hz(void);
 inline void loop_100hz(void);
 
 static const Task scheduler_tasks[] = {
-	{ console_run, 1, 1500}
+	{ console_run, 5, 1500}
 };
 
 int32_t main(void){
@@ -76,14 +76,20 @@ int32_t main(void){
 /* Run frequency is change by other tasks. But this function is run at 100hz */
 void main_loop(void)
 {
-	uint32_t dt = 0;
+	uint32_t dt = 0, now = 0;
+	static uint32_t main_loop_timer = 0;
 	
 	/* Update AHRS */
 	AHRS_read_imu();
+	
 	dt = Stop_DT2();
+	now = get_micros();
+	
 	if(dt == 0) dt = 10000;
 	AHRS_dcm_update(dt / 1000000.f);
-	set_debug_msg("AHRS_Rate = %d", dt);
+	
+	set_debug_msg("AHRS_Rate = %d, %d", dt, (now - main_loop_timer));
+	main_loop_timer = now;
 	Start_DT2();
 	
 	AHRS_dcm_normalize();

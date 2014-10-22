@@ -1,20 +1,20 @@
 
 #include "timer.h"
 
-static volatile uint32_t _usec = 0;
-static volatile uint32_t _usec_delay_counter = 0;
-
-static inline void TimingDelay_Decrement(void);
+static volatile uint32_t _msec = 0;
 
 volatile timeFlg time = { 0, 0, 0, 0, 0, 0, 0, 0};
 
 void Init_timer(void)
 {
-	
 	uint32_t period;
-	period = SystemCoreClock / 1000000;
 	
-	SysTick_Config(period); //1usec‚ÅŠ„‚èž‚ÝÝ’è
+	/* Systick interrupt priority setting */
+	NVIC_SetPriority(SysTick_IRQn, 0); // set to highest priority
+	
+	period = SystemCoreClock / 1000;
+	
+	SysTick_Config(period); // Interuppt every 1msec
 }
 
 void Init_DT(void)
@@ -71,9 +71,7 @@ uint32_t Stop_DT2(void)
 
 void SysTick_Handler(void)
 {
-	_usec ++;
-	
-	TimingDelay_Decrement();
+	_msec ++;
 }
 
 void DT_Handler(void)
@@ -126,33 +124,29 @@ void DT_Handler(void)
 
 uint32_t get_micros()
 {
-	return _usec;
+	uint32_t micros;
+	micros = (_msec * 1000) + (1000 - SysTick->VAL / 144);
+	return micros;
 }
 
 uint32_t get_millis()
 {
-	return (uint32_t)(_usec / 1000);
+	return _msec;
 }
 
 void wait_usec(__IO uint32_t length)
 {
+	uint32_t now;
+	now = get_micros();
 	
-	_usec_delay_counter = length;
-	
-	while(_usec_delay_counter != 0);
+	while(get_micros() < (now + length));
 }
 
 void wait(__IO uint32_t length)
 {
+	uint32_t now;
+	now = _msec;
 	
-	_usec_delay_counter = length * 1000;
-	
-	while(_usec_delay_counter != 0);
+	while(_msec < (now + length));
 }
 
-static inline void TimingDelay_Decrement()
-{
-	if (_usec_delay_counter != 0x00){
-		_usec_delay_counter --;
-	}
-}
