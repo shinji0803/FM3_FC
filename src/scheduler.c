@@ -46,6 +46,11 @@ void scheduler_run(uint16_t time_available)
 			_task_time_allowed = _tasks[i].max_time_micros;
 			
 			if(dt >= interval_ticks * 2){
+				printf("Scheduler slip task[%u] (%u/%u/%u)\n", 
+												(unsigned)i, 
+												(unsigned)dt,
+												(unsigned)interval_ticks,
+												(unsigned)_task_time_allowed);
 			}
 			
 			if(_task_time_allowed <= time_available){
@@ -57,13 +62,13 @@ void scheduler_run(uint16_t time_available)
 				now = get_micros();
 				
 				uint32_t time_taken = now - _task_time_started;
-				
 				if(time_taken > _task_time_allowed){
 					/* Current Task is Overran. Print Debug Message. */
 					printf("Scheduler overrun task[%u] (%u/%u)\n", 
                                             (unsigned)i, 
                                             (unsigned)time_taken,
                                             (unsigned)_task_time_allowed);
+					//printf("TaskStart: %lu TaskEnd: %lu\n", _task_time_started, now);
 				}
 				
 				if(time_taken >= time_available){

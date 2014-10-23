@@ -12,7 +12,7 @@ void Init_timer(void)
 	/* Systick interrupt priority setting */
 	NVIC_SetPriority(SysTick_IRQn, 0); // set to highest priority
 	
-	period = SystemCoreClock / 1000;
+	period = SystemCoreClock / 1000UL;
 	
 	SysTick_Config(period); // Interuppt every 1msec
 }
@@ -124,9 +124,14 @@ void DT_Handler(void)
 
 uint32_t get_micros()
 {
-	uint32_t micros;
-	micros = (_msec * 1000) + (1000 - SysTick->VAL / 144);
-	return micros;
+	register uint32_t millis, systickCount;
+	
+	do{
+		millis = _msec;
+		systickCount = SysTick->VAL;
+	} while(millis != _msec);
+	
+	return (millis * 1000) + (144000 - systickCount) / 144;
 }
 
 uint32_t get_millis()
