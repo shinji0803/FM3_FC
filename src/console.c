@@ -43,45 +43,46 @@ static uint8_t get_float_input(uint8_t inputChar);
 
 /* Command type */
 static const Menu top_menu_content[] = {
-	{'a', "read AHRS", NULL},
-	{'r', "read Radio", NULL},
-	{'c', "set Attitude Gain", NULL},
-	{'g', "set AHRS Gain", NULL},
-	{'l', "Print CPU Load", NULL},
-	{'d', "Print Debug Message", NULL}
+	{'a', "read AHRS", 				NULL},
+	{'r', "read Radio", 			NULL},
+	{'c', "set Attitude Gain",		NULL},
+	{'g', "set AHRS Gain",			NULL},
+	{'l', "Print CPU Load",			NULL},
+	{'d', "Print Debug Message",	NULL},
+	{'m', "Print Mag Calib Data",	NULL}
 };
 static const uint8_t top_menu_content_size = sizeof(top_menu_content) / sizeof(top_menu_content[0]);
 
 static const Menu att_gain_menu_content[] = {
-	{'1', "set Roll Gain", NULL},
-	{'2', "set Pitch Gain", NULL},
-	{'3', "set Yaw Gain", NULL},
-	{'4', "set Roll Rate Gain", NULL},
-	{'5', "set Pitch Rate Gain", NULL},
-	{'6', "set Yaw Rate Gain", NULL},
-	{'e', "exit", NULL}
+	{'1', "set Roll Gain",			NULL},
+	{'2', "set Pitch Gain",			NULL},
+	{'3', "set Yaw Gain",			NULL},
+	{'4', "set Roll Rate Gain",		NULL},
+	{'5', "set Pitch Rate Gain",	NULL},
+	{'6', "set Yaw Rate Gain",		NULL},
+	{'e', "exit",					NULL}
 };
 
 static const Menu att_axis_gain_menu_content[] = {
-	{'d', "display All Gain", NULL},
-	{'1', "set P_Gain", NULL},
-	{'2', "set I_Gain", NULL},
-	{'3', "set D_Gain", NULL},
-	{'s', "save all gain setting", NULL},
-	{'r', "restore parameters", NULL},
-	{'e', "exit", NULL}
+	{'d', "display All Gain",		NULL},
+	{'1', "set P_Gain",				NULL},
+	{'2', "set I_Gain",				NULL},
+	{'3', "set D_Gain",				NULL},
+	{'s', "save all gain setting",	NULL},
+	{'r', "restore parameters",		NULL},
+	{'e', "exit",					NULL}
 };
 static const uint8_t att_axis_gain_menu_content_size = sizeof(att_axis_gain_menu_content) / sizeof(att_axis_gain_menu_content[0]);
 
 static const Menu ahrs_gain_menu_content[] = {
-	{'d', "display All Gain", NULL},
-	{'1', "set AHRS RollPitch P_Gain", NULL},
-	{'2', "set AHRS RollPitch I_Gain", NULL},
-	{'3', "set AHRS Yaw P_Gain", NULL},
-	{'4', "set AHRS Yaw I_Gain", NULL},
-	{'s', "save all gain setting", NULL},
-	{'r', "restore parameters", NULL},
-	{'e', "exit", NULL}
+	{'d', "display All Gain",			NULL},
+	{'1', "set AHRS RollPitch P_Gain",	NULL},
+	{'2', "set AHRS RollPitch I_Gain",	NULL},
+	{'3', "set AHRS Yaw P_Gain",		NULL},
+	{'4', "set AHRS Yaw I_Gain",		NULL},
+	{'s', "save all gain setting",		NULL},
+	{'r', "restore parameters",			NULL},
+	{'e', "exit",						NULL}
 };
 static const uint8_t ahrs_gain_menu_content_size = sizeof(ahrs_gain_menu_content) / sizeof(ahrs_gain_menu_content[0]);
 
@@ -174,9 +175,7 @@ void console_run(void)
 static void top_menu(void)
 {
 	uint8_t i;
-	printf("-----------------------------\r\n");
-	printf("----  CLI + AHRS ver3.0  ----\r\n");
-	printf("-----------------------------\r\n");
+	printf("----  CLI + AHRS ver4.0  ----\r\n");
 	for( i = 0; i < top_menu_content_size; i ++)
 		printf("%c: %s\r\n", top_menu_content[i].command, top_menu_content[i].brief);
 	printf("-----------------------------\r\n");
@@ -269,7 +268,11 @@ static void top_menu_branch(uint8_t command)
 			break;
 			
 			case 'l':
-			printf("> Scheduler Load = %f\r\n", scheduler_load_average(10000));
+			printf("> SchedulerLoad: %4.2f\r\n", scheduler_load_average(10000) * 100.f);
+			break;
+			
+			case 'm':
+			AHRS_show_calib_mag();
 			break;
 			
 			default:

@@ -2,8 +2,8 @@
 #ifndef FRAM_H
 #define FRAM_H
 
-//FRAM read and write funtions
-//for MB85RC16 Memory = 2048Å~8bit
+// FRAM read and write funtions
+// for MB85RC16 Memory = 2048Å~8bit
 
 #include "I2cDev.h"
 

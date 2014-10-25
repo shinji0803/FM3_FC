@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "i2c.h"
+#include "timer.h"
 
 static uint8_t _wmp_data[32];
 
@@ -12,12 +13,16 @@ void WMP_init(void)
 	/* Wii Motion Plus Initialize. */
 	int32_t size;
 	
+	wait(200);
+	
 	i2c->Cfg.SlaveAddr = WMP_CONF_ADD; 
-
+	
 	_wmp_data[0] = 0xFE;
 	_wmp_data[1] = 0x04;
 	size = 2;
 	i2c->DataTx(_wmp_data, &size);
+	
+	wait(200);
 	
 	printf("WiiMotion+ Initialized\r\n");
 }

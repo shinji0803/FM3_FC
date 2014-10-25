@@ -178,7 +178,6 @@ SOURCE  = ./src
 CFILES = \
  $(SOURCE)/$(TARGET).c			\
  $(SOURCE)/syscalls.c			\
- $(SOURCE)/scheduler.c			\
  $(SOURCE)/uart_support.c		\
  $(SOURCE)/console.c			\
  $(SOURCE)/myMath.c				\

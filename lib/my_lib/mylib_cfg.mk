@@ -7,6 +7,8 @@ LIBINCDIRS += $(MYLIB_INC)
 
 CFILES += \
  $(MYLIB_SRC)/timer.c 				\
+ $(MYLIB_SRC)/scheduler.c 			\
+ $(MYLIB_SRC)/PID.c 				\
  $(MYLIB_SRC)/rc_io.c				\
  $(MYLIB_SRC)/i2c.c					\
  $(MYLIB_SRC)/fram.c				\

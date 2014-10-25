@@ -2,7 +2,7 @@
 #ifndef WMP_H
 #define WMP_H
 
-//Wii Motion Plus 
+/* Wii Motion Plus */
 
 #include "parameters.h"
 

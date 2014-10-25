@@ -28,7 +28,7 @@ inline void loop_50hz(void);
 inline void loop_100hz(void);
 
 static const Task scheduler_tasks[] = {
-	{ console_run, 5, 1500}
+	{ console_run, 		5, 		1500}
 };
 
 int32_t main(void){
@@ -55,6 +55,8 @@ int32_t main(void){
 	printf("Initialize OK.\r\n");
 	//Initialize complete
 	
+	//Mavlink_port_init(2, 57600UL);
+	
 	AHRS_Init();
 	console_init();
 	scheduler_init((Task *)scheduler_tasks, sizeof(scheduler_tasks) / sizeof(scheduler_tasks[0]));
@@ -73,7 +75,7 @@ int32_t main(void){
 
 /* Most Fast Loop */
 /* This funtion run as fast as possible. */
-/* Run frequency is change by other tasks. But this function is run at 100hz */
+/* Run frequency is change by other tasks. But this function is run at least 100hz */
 void main_loop(void)
 {
 	uint32_t dt = 0, now = 0;
@@ -94,9 +96,9 @@ void main_loop(void)
 	
 	AHRS_dcm_normalize();
 	AHRS_drift_correction();
+	AHRS_calc_euler();
 	
 }
-
 
 static void InitLED(void)
 {

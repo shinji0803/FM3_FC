@@ -2,7 +2,7 @@
 #ifndef PX4_FLOW_H
 #define PX4_FLOW_H
 
-//PX4 Flow‚Ìƒf[ƒ^ˆ—•”•ª
+/* PX4 Flow */ 
 
 #include "parameters.h"
 

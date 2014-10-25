@@ -44,6 +44,16 @@ void rcout_enable(uint8_t ch);
 #define OUT7 FM3_BT14_PWM
 #define OUT8 FM3_BT15_PWM
 
+/* RC Config Data Struct */
+typedef struct _rc_config
+{
+	uint16_t rc_min; 
+	uint16_t rc_max;
+	uint16_t rc_trim;
+	
+	uint16_t rc_dz;
+} RC_CONFIG;
+
 /* Output PWM (ch = 1 ~ 8) */
 void rc_write(uint8_t ch, uint16_t pulse_usec);
 
