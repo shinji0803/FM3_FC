@@ -36,16 +36,18 @@ void AHRS_get_raw_acc(Vector3f *a); // get raw acc value
 // Mag function
 void AHRS_get_mag(Vector3f *m); // get scaled mag value
 void AHRS_get_raw_mag(Vector3f *m); // get raw mag value
+void AHRS_show_calib_mag(void); // show calibration data
 
-void AHRS_get_euler(Vector3f *att); // get euler angle from DCM
+void AHRS_calc_euler(void); // calculate euler angle from DCM
+void AHRS_get_euler(Vector3f *att); // get euler angle
 
-float AHRS_heading(Vector3f from); // get heading(Yaw) that corrected leaning
+float AHRS_mag_heading(void); // get heading(rad) that corrected leaning
 
 
 /* Calibration Data */
 /* Mag calibration data */
-static const Vector3f m_max = { 400.0f, 400.0f, 400.0f}; 
-static const Vector3f m_min = { -400.0f, -400.0f, -400.0f};
+static const Vector3f m_max = { 587.0f, 754.0f, 727.0f}; 
+static const Vector3f m_min = { -946.0f, -686.0f, -680.0f};
 
 /* Acc calibration data */
 static const Vector3f a_max = { 16800.0f, 15500.0f, 16000.0f};
@@ -70,6 +72,13 @@ static const Vector3f a_min = { -16400.0f, -16800.0f, -17050.0f};
 #define ACCEL_X_SCALE (GRAVITY / (a_max.x - ACCEL_X_OFFSET))
 #define ACCEL_Y_SCALE (GRAVITY / (a_max.y - ACCEL_Y_OFFSET))
 #define ACCEL_Z_SCALE (GRAVITY / (a_max.z - ACCEL_Z_OFFSET))
+
+#define MAGN_X_OFFSET ((m_min.x + m_max.x) / 2.0f)
+#define MAGN_Y_OFFSET ((m_min.y + m_max.y) / 2.0f)
+#define MAGN_Z_OFFSET ((m_min.z + m_max.z) / 2.0f)
+#define MAGN_X_SCALE (100.0f / (m_max.x - MAGN_X_OFFSET))
+#define MAGN_Y_SCALE (100.0f / (m_max.y - MAGN_Y_OFFSET))
+#define MAGN_Z_SCALE (100.0f / (m_max.z - MAGN_Z_OFFSET))
 
 
 #endif

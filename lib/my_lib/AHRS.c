@@ -16,8 +16,10 @@ static Matrix3f _dcm_matrix = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 static Vector3f _gyroOffset;
 
 static Vector3f _rawG = { 0.0f, 0.0f, 0.0f}, _rawA = { 0.0f, 0.0f, 0.0f}, _rawM = { 0.0f, 0.0f, 0.0f};
-static Vector3f _scaledG = { 0.0f, 0.0f, 0.0f}, _scaledA = { 0.0f, 0.0f, 0.0f};
+static Vector3f _scaledG = { 0.0f, 0.0f, 0.0f}, _scaledA = { 0.0f, 0.0f, 0.0f}, _scaledM = { 0.0f, 0.0f, 0.0f};
 static float _mag_heading = 0.0f;
+
+static float _roll, _pitch, _yaw;
 
 //DCM Parameter
 static Vector3f _omega = { 0.0f, 0.0f, 0.0f};
@@ -104,7 +106,7 @@ void AHRS_Init(void)
 	Vector_Cross_Product(&temp2, &xAxis, &temp1);
 	att.x = -atan2( temp2.y, temp2.z);
 	//Get Yaw
-	att.z = ToRad(AHRS_heading((Vector3f){0,1,0}));
+	att.z = AHRS_mag_heading();
 	init_rotation_matrix(&_dcm_matrix, att.z, att.y, att.x);
 	
 	time.calibrate = 0;
@@ -147,6 +149,8 @@ void AHRS_read_imu(void)
 	
 	/* Mag read */
 	readMag(&_rawM);
+	_rawM.y *= -1;
+	_rawM.z *= -1;
 }
 
 void AHRS_dcm_update(float dt)
@@ -221,7 +225,7 @@ void AHRS_drift_correction(void)
 	float accel_weight;
 	
 	/* calculate heading from mag */
-	_mag_heading = ToRad(AHRS_heading((Vector3f){0,1,0}));
+	_mag_heading = AHRS_mag_heading();
 	
 	/* Roll and Pitch */
 	accel_magnitude = sqrtf(_scaledA.x * _scaledA.x + _scaledA.y * _scaledA.y + _scaledA.z * _scaledA.z);
@@ -245,6 +249,13 @@ void AHRS_drift_correction(void)
   
 	Vector_Scale(&scaled_omega_I, &_errorYaw, _Ki_yaw);
 	Vector_Add(&_omega_I, &_omega_I, &scaled_omega_I);
+}
+
+void AHRS_calc_euler()
+{
+	_pitch = -asin(_dcm_matrix.c.x);
+	_roll = atan2(_dcm_matrix.c.y, _dcm_matrix.c.z);
+	_yaw = atan2(_dcm_matrix.b.x, _dcm_matrix.a.x);
 }
 
 void AHRS_get_gain(float *tempKp, float *tempKi, float *tempKp_yaw, float *tempKi_yaw)
@@ -311,9 +322,9 @@ void AHRS_get_raw_acc(Vector3f *a)
 
 void AHRS_get_mag(Vector3f *m)
 {
-	m->x = _rawM.x;
-	m->y = _rawM.y;
-	m->z = _rawM.z;
+	m->x = (_rawM.x - MAGN_X_OFFSET) * MAGN_X_SCALE;
+	m->y = (_rawM.y - MAGN_Y_OFFSET) * MAGN_Y_SCALE;
+	m->z = (_rawM.z - MAGN_Z_OFFSET) * MAGN_Z_SCALE;
 }
 
 void AHRS_get_raw_mag(Vector3f *m)
@@ -323,6 +334,29 @@ void AHRS_get_raw_mag(Vector3f *m)
 	m->z = _rawM.z;
 }
 
+void AHRS_show_calib_mag(void)
+{
+	static Vector3f temp_max, temp_min;
+	static uint32_t last_call = 0;
+	
+	if(get_millis() - last_call > 200){
+		memset(&temp_max, 0, sizeof(temp_max));
+		memset(&temp_min, 0, sizeof(temp_min));
+	}
+	last_call = get_millis();
+	
+	if(_rawM.x > temp_max.x) temp_max.x = _rawM.x;
+	if(_rawM.x < temp_min.x) temp_min.x = _rawM.x;
+	
+	if(_rawM.y > temp_max.y) temp_max.y = _rawM.y;
+	if(_rawM.y < temp_min.y) temp_min.y = _rawM.y;
+	
+	if(_rawM.z > temp_max.z) temp_max.z = _rawM.z;
+	if(_rawM.z < temp_min.z) temp_min.z = _rawM.z;
+	
+	printf("> M: X(%5.0f, %5.0f) Y(%5.0f, %5.0f), Z(%5.0f, %5.0f)\r\n",
+				temp_max.x, temp_min.x, temp_max.y, temp_min.y, temp_max.z, temp_min.z);
+}
 
 void init_rotation_matrix(Matrix3f *m, float yaw, float pitch, float roll)
 {	
@@ -350,38 +384,33 @@ void init_rotation_matrix(Matrix3f *m, float yaw, float pitch, float roll)
 
 void AHRS_get_euler(Vector3f *att)
 {
-	att->y = -asin(_dcm_matrix.c.x);
-	att->x = atan2(_dcm_matrix.c.y, _dcm_matrix.c.z);
-	att->z = atan2(_dcm_matrix.b.x, _dcm_matrix.a.x);
+	att->x = _roll;
+	att->y = _pitch;
+	att->z = _yaw;
 }
 
-/* Move from LSM303DLH library */
-float AHRS_heading(Vector3f from)
+float AHRS_mag_heading(void)
 {
-	Vector3f temp_a, temp_m;
-	AHRS_get_raw_acc(&temp_a);
-	AHRS_get_raw_mag(&temp_m);
-    // shift and scale
-    temp_m.x = (temp_m.x - m_min.x) / (m_max.x - m_min.x) * 2 - 1.0;
-    temp_m.y = (temp_m.y - m_min.y) / (m_max.y - m_min.y) * 2 - 1.0;
-    temp_m.z = (temp_m.z - m_min.z) / (m_max.z - m_min.z) * 2 - 1.0;
-
-    //Vector3f temp_a = a;
-    // normalize
-    Vector_Normalize(&temp_a);
-    //vector_normalize(&m);
-
-    // compute E and N
-    Vector3f E;
-    Vector3f N;
-    Vector_Cross_Product(&E, &temp_m, &temp_a);
-    Vector_Normalize(&E);
-    Vector_Cross_Product(&N, &temp_a, &E);
+	float mag_x;
+	float mag_y;
+	float cos_roll;
+	float sin_roll;
+	float cos_pitch;
+	float sin_pitch;
 	
-    // compute heading
-	float heading = (atan2(Vector_Dot_Product(&E, &from), Vector_Dot_Product(&N, &from)) * 180 / M_PI);
-    if (heading < 0) heading += 360.0;
-	return heading;
+	AHRS_get_mag(&_scaledM);
+	
+	cos_roll = cosf(_roll);
+	sin_roll = sinf(_roll);
+	cos_pitch = cosf(_pitch);
+	sin_pitch = sinf(_pitch);
+  
+	// Tilt compensated magnetic field X
+	mag_x = _scaledM.x * cos_pitch + _scaledM.y * sin_roll * sin_pitch + _scaledM.z * cos_roll * sin_pitch;
+	// Tilt compensated magnetic field Y
+	mag_y = _scaledM.y * cos_roll - _scaledM.z * sin_roll;
+  
+	return atan2(-mag_y, mag_x);
 }
 	
 	
