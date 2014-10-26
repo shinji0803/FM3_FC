@@ -23,4 +23,7 @@ void scheduler_run(uint16_t time_available);
 
 /* Get load average. Range is 0.0 ~ 1.0 */
 float scheduler_load_average(uint32_t tick_time_usec);
+
+/* Print Time Taken of All Tasks */
+void scheduler_print_timetaken(void);
 #endif

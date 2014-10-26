@@ -49,7 +49,8 @@ static const Menu top_menu_content[] = {
 	{'g', "set AHRS Gain",			NULL},
 	{'l', "Print CPU Load",			NULL},
 	{'d', "Print Debug Message",	NULL},
-	{'m', "Print Mag Calib Data",	NULL}
+	{'m', "Print Mag Calib Data",	NULL},
+	{'t', "Task Scheduler Status",	NULL}
 };
 static const uint8_t top_menu_content_size = sizeof(top_menu_content) / sizeof(top_menu_content[0]);
 
@@ -273,6 +274,10 @@ static void top_menu_branch(uint8_t command)
 			
 			case 'm':
 			AHRS_show_calib_mag();
+			break;
+			
+			case 't':
+			scheduler_print_timetaken();
 			break;
 			
 			default:

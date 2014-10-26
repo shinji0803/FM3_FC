@@ -20,6 +20,7 @@
 #define VectorPrintf(v) printf("%+6.4f, %+6.4f, %+6.4f", v.x, v.y, v.z)
 
 static void main_loop(void);
+static void send_mavlink(void);
 
 static void InitLED(void);
 inline void loop_1hz(void);
@@ -28,7 +29,8 @@ inline void loop_50hz(void);
 inline void loop_100hz(void);
 
 static const Task scheduler_tasks[] = {
-	{ console_run, 		5, 		1500}
+	{ console_run, 		5, 		1500},
+	{ send_mavlink,		4,		100}
 };
 
 int32_t main(void){
@@ -55,7 +57,7 @@ int32_t main(void){
 	printf("Initialize OK.\r\n");
 	//Initialize complete
 	
-	//Mavlink_port_init(2, 57600UL);
+	Mavlink_port_init(2, 57600UL);
 	
 	AHRS_Init();
 	console_init();
@@ -98,6 +100,50 @@ void main_loop(void)
 	AHRS_drift_correction();
 	AHRS_calc_euler();
 	
+}
+
+static void send_mavlink(void)
+{
+	static uint8_t mav_msg[MAVLINK_MAX_PACKET_LEN];
+	static int32_t sent_byte = 0, remain_byte = 0;
+	static int32_t msg_length;
+	static uint8_t mavlink_count = 0;
+	
+	Mavlink_rx_check();
+	
+	Vector3f temp1, temp2, temp3;
+	if(remain_byte <= 0){
+		/* Create send message and get message length */
+		switch(mavlink_count){
+			case 0:
+			Mavlink_get_heartbeat_msg(mav_msg, &msg_length);
+			mavlink_count ++;
+			break;
+			
+			case 1:
+			AHRS_get_euler(&temp1);
+			AHRS_get_omega(&temp2);
+			Mavlink_get_att_msg(mav_msg, &msg_length, &temp1, &temp2);
+			mavlink_count ++;
+			break;
+			
+			case 2:
+			AHRS_get_raw_acc(&temp1);
+			AHRS_get_raw_gyro(&temp2);
+			AHRS_get_raw_mag(&temp3);
+			Mavlink_get_imu_raw_msg(mav_msg, &msg_length, &temp1, &temp2, &temp3);
+			mavlink_count ++;
+			break;
+		}
+		if(mavlink_count >= 3) mavlink_count = 0;
+		
+		remain_byte = msg_length;
+		sent_byte = 0;
+	}
+	
+	remain_byte = msg_length - sent_byte;
+	Mavlink_tx_nonblocking((mav_msg + sent_byte), &remain_byte);
+	sent_byte = remain_byte;
 }
 
 static void InitLED(void)

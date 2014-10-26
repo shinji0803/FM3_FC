@@ -39,13 +39,26 @@ int32_t Mavlink_tx(void *data, int32_t *size)
 	return mavlink->BufTx(data, size, UartDev_FLAG_BLOCKING);
 }
 
+int32_t Mavlink_tx_nonblocking(void *data, int32_t *size)
+{
+	return mavlink->BufTx(data, size, UartDev_FLAG_NONBLOCKING);
+}
+
+
 void Mavlink_heartbeat_send(void)
 {
 	int32_t size;
 	mavlink_msg_heartbeat_pack(100, 200, &_msg, _system_type, _autopilot_type, 0, 0, 0);
-			
+	
 	size = mavlink_msg_to_send_buffer(_mav_send_msg, &_msg);
 	Mavlink_tx(_mav_send_msg, &size);
+}
+
+void Mavlink_get_heartbeat_msg(uint8_t *mav_msg, int32_t *size)
+{
+	mavlink_msg_heartbeat_pack(100, 200, &_msg, _system_type, _autopilot_type, 0, 0, 0);
+	
+	*size = mavlink_msg_to_send_buffer(mav_msg, &_msg);
 }
 
 void Mavlink_rcin_raw_send(uint16_t *input)
@@ -70,6 +83,16 @@ void Mavlink_imu_raw_send(Vector3f *a, Vector3f *g, Vector3f *m)
 	Mavlink_tx(_mav_send_msg, &size);
 }
 
+void Mavlink_get_imu_raw_msg(uint8_t *mav_msg, int32_t *size, Vector3f *a, Vector3f *g, Vector3f *m)
+{
+	mavlink_msg_raw_imu_pack(100, 200, &_msg, get_micros(), 
+								(int16_t)a->x	, (int16_t)a->y, (int16_t)a->z,
+								(int16_t)g->x, (int16_t)g->y, (int16_t)g->z, 
+								(int16_t)m->x, (int16_t)m->y, (int16_t)m->z);
+	
+	*size = mavlink_msg_to_send_buffer(mav_msg, &_msg);
+}
+
 void Mavlink_att_send(Vector3f *att, Vector3f *attSpeed)
 {
 	int32_t size;
@@ -79,6 +102,15 @@ void Mavlink_att_send(Vector3f *att, Vector3f *attSpeed)
 
 	size = mavlink_msg_to_send_buffer(_mav_send_msg, &_msg);
 	Mavlink_tx(_mav_send_msg, &size);
+}
+
+void Mavlink_get_att_msg(uint8_t *mav_msg, int32_t *size, Vector3f *att, Vector3f *attSpeed)
+{
+	mavlink_msg_attitude_pack(100, 200, &_msg, get_millis(), 
+								att->x, att->y, att->z,
+								attSpeed->x, attSpeed->y, attSpeed->z);
+
+	*size = mavlink_msg_to_send_buffer(mav_msg, &_msg);
 }
 
 void Mavlink_debug_vect_send(uint8_t *name, Vector3f *v)
