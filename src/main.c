@@ -30,7 +30,7 @@ inline void loop_100hz(void);
 
 static const Task scheduler_tasks[] = {
 	{ console_run, 		5, 		1500},
-	{ send_mavlink,		4,		100}
+	{ send_mavlink,		5,		120}
 };
 
 int32_t main(void){
@@ -75,7 +75,7 @@ int32_t main(void){
 	} 
 }
 
-/* Most Fast Loop */
+/* Fast Loop */
 /* This funtion run as fast as possible. */
 /* Run frequency is change by other tasks. But this function is run at least 100hz */
 void main_loop(void)
@@ -92,7 +92,7 @@ void main_loop(void)
 	if(dt == 0) dt = 10000;
 	AHRS_dcm_update(dt / 1000000.f);
 	
-	set_debug_msg("AHRS_Rate = %d, %d", dt, (now - main_loop_timer));
+	//set_debug_msg("AHRS_Rate = %d, %d", dt, (now - main_loop_timer));
 	main_loop_timer = now;
 	Start_DT2();
 	
@@ -102,48 +102,68 @@ void main_loop(void)
 	
 }
 
+#define MAVLINK_SEND_MSG_NUM 3
 static void send_mavlink(void)
 {
 	static uint8_t mav_msg[MAVLINK_MAX_PACKET_LEN];
-	static int32_t sent_byte = 0, remain_byte = 0;
-	static int32_t msg_length;
-	static uint8_t mavlink_count = 0;
+	static int32_t msg_length, sent_byte = 0, remain_byte = 0;
 	
-	Mavlink_rx_check();
+	static uint32_t last_send[MAVLINK_SEND_MSG_NUM] = { 0, 0, 0};
+	static const uint32_t send_interval[MAVLINK_SEND_MSG_NUM] = { 1000, 100, 50};
 	
+	uint32_t now;
+	int32_t dt;
+	uint32_t mindt;
 	Vector3f temp1, temp2, temp3;
-	if(remain_byte <= 0){
-		/* Create send message and get message length */
-		switch(mavlink_count){
-			case 0:
-			Mavlink_get_heartbeat_msg(mav_msg, &msg_length);
-			mavlink_count ++;
-			break;
-			
-			case 1:
-			AHRS_get_euler(&temp1);
-			AHRS_get_omega(&temp2);
-			Mavlink_get_att_msg(mav_msg, &msg_length, &temp1, &temp2);
-			mavlink_count ++;
-			break;
-			
-			case 2:
-			AHRS_get_raw_acc(&temp1);
-			AHRS_get_raw_gyro(&temp2);
-			AHRS_get_raw_mag(&temp3);
-			Mavlink_get_imu_raw_msg(mav_msg, &msg_length, &temp1, &temp2, &temp3);
-			mavlink_count ++;
-			break;
-		}
-		if(mavlink_count >= 3) mavlink_count = 0;
-		
-		remain_byte = msg_length;
-		sent_byte = 0;
-	}
+	uint8_t i, send_index = 0;
 	
-	remain_byte = msg_length - sent_byte;
-	Mavlink_tx_nonblocking((mav_msg + sent_byte), &remain_byte);
-	sent_byte = remain_byte;
+	if(Mavlink_enabled() != 0){
+		Mavlink_rx_check();
+		
+		if(remain_byte <= 0){
+			now = get_millis();
+			mindt = now;
+			for(i = 0; i < MAVLINK_SEND_MSG_NUM; i ++){
+				dt = (int32_t)(now - (last_send[i] + send_interval[i]));
+				if(labs(dt) < mindt){
+					mindt = labs(dt);
+					send_index = i;
+				}
+			}
+			
+			/* Create send message and get message length */
+			switch(send_index){
+				case 0:
+				Mavlink_get_heartbeat_msg(mav_msg, &msg_length);
+				break;
+				
+				case 1:
+				AHRS_get_euler(&temp1);
+				AHRS_get_omega(&temp2);
+				Mavlink_get_att_msg(mav_msg, &msg_length, &temp1, &temp2);
+				break;
+				
+				case 2:
+				AHRS_get_raw_acc(&temp1);
+				AHRS_get_raw_gyro(&temp2);
+				AHRS_get_raw_mag(&temp3);
+				Mavlink_get_imu_raw_msg(mav_msg, &msg_length, &temp1, &temp2, &temp3);
+				break;
+			}
+			last_send[send_index] = now;
+			
+			remain_byte = msg_length;
+			sent_byte = 0;
+		}
+		
+		remain_byte = msg_length - sent_byte;
+		Mavlink_tx_nonblocking((mav_msg + sent_byte), &remain_byte);
+		sent_byte = remain_byte;
+	}
+	else{
+		now = get_millis();
+		for(i = 0; i < MAVLINK_SEND_MSG_NUM; i ++) last_send[i] = now;
+	}		
 }
 
 static void InitLED(void)

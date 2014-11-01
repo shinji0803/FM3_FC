@@ -34,6 +34,8 @@ void LSM303DLH_Init(void)
 	writeMagReg(LSM303DLH_MR_REG_M, 0x00);
 	// Data output rate = 75Hz
 	writeMagReg(LSM303DLH_CRA_REG_M, 0x18);
+	
+	printf("LSM303DLH Initialized\r\n");
 }
 
 // Writes an accelerometer register

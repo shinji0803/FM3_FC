@@ -4,6 +4,7 @@
 #include <stdarg.h>
 
 #include "uart_support.h"
+#include "mavlink_support.h"
 #include "scheduler.h"
 #include "parameters.h"
 #include "rc_io.h"
@@ -49,8 +50,8 @@ static const Menu top_menu_content[] = {
 	{'g', "set AHRS Gain",			NULL},
 	{'l', "Print CPU Load",			NULL},
 	{'d', "Print Debug Message",	NULL},
-	{'m', "Print Mag Calib Data",	NULL},
-	{'t', "Task Scheduler Status",	NULL}
+	{'t', "Task Scheduler Status",	NULL},
+	{'m', "Switch Mavlink Output",	NULL}
 };
 static const uint8_t top_menu_content_size = sizeof(top_menu_content) / sizeof(top_menu_content[0]);
 
@@ -273,7 +274,8 @@ static void top_menu_branch(uint8_t command)
 			break;
 			
 			case 'm':
-			AHRS_show_calib_mag();
+			Mavlink_enabled_switch();
+			_input_detect = 0;
 			break;
 			
 			case 't':

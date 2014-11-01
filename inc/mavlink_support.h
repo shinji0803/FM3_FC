@@ -9,6 +9,9 @@
 
 int32_t Mavlink_port_init(uint8_t ch, uint32_t baudrate);
 
+uint8_t Mavlink_enabled(void);
+void Mavlink_enabled_switch(void);
+
 /* Mavlink Message Send Function */
 int32_t Mavlink_tx(void *data, int32_t *size); // Control stop until all data send
 int32_t Mavlink_tx_nonblocking(void *data, int32_t *size);

@@ -12,6 +12,7 @@ void WMP_init(void)
 {
 	/* Wii Motion Plus Initialize. */
 	int32_t size;
+	int32_t ret;
 	
 	wait(200);
 	
@@ -20,11 +21,15 @@ void WMP_init(void)
 	_wmp_data[0] = 0xFE;
 	_wmp_data[1] = 0x04;
 	size = 2;
-	i2c->DataTx(_wmp_data, &size);
+	ret = i2c->DataTx(_wmp_data, &size);
+	
+	if(ret != SUCCESS){
+		printf("WiiMotion+ Initialize Failed\r\n");
+		while(1);
+	}
+	printf("WiiMotion+ Initialized\r\n");
 	
 	wait(200);
-	
-	printf("WiiMotion+ Initialized\r\n");
 }
 
 void WMP_update(void)

@@ -50,7 +50,7 @@ void AHRS_Init(void)
 	const Vector3f xAxis = {1.0f, 0.0f, 0.0f};
 	
 	int32_t sum_count = 0;
-
+	
 	/* Acc and Mag enable */
 	LSM303DLH_Init();
 	/* Gyro enable */
@@ -111,7 +111,6 @@ void AHRS_Init(void)
 	
 	time.calibrate = 0;
 }
-
 
 static uint8_t check_gyro_calib_data(Vector3f *g)
 {

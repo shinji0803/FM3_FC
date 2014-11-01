@@ -446,7 +446,7 @@ static int32_t  I2cDev_DataTx(uint32_t Ch, void *pData, int32_t *pSize)
         
         /* uninitialized data information */
         p_info->pDataInfo->TxRxFlag = 0;
-        
+		
         /* check Count */
         if (p_info->pDataInfo->Count != 0) {
             /* return size */
@@ -512,7 +512,6 @@ static int32_t  I2cDev_DataRx(uint32_t Ch, void *pData, int32_t *pSize)
         
         /* uninitialized data information */
         p_info->pDataInfo->TxRxFlag = 0;
-        
         /* check Count */
         if (p_info->pDataInfo->Count != 0) {
             /* return size */

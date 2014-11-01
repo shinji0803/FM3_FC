@@ -12,6 +12,8 @@ mavlink_message_t _msg;
 
 static uint8_t _mav_send_msg[MAVLINK_MAX_PACKET_LEN];
 
+static uint8_t _mavlink_enabled = 0;
+
 static const int _system_type = MAV_TYPE_GENERIC;
 static const int _autopilot_type = MAV_AUTOPILOT_GENERIC;
 
@@ -33,6 +35,20 @@ int32_t Mavlink_port_init(uint8_t ch, uint32_t baudrate)
 	result = mavlink->Init();
 	return result;
 }
+
+uint8_t Mavlink_enabled(void)
+{
+	return _mavlink_enabled;
+}
+
+void Mavlink_enabled_switch(void)
+{
+	_mavlink_enabled = ~_mavlink_enabled;
+	
+	if(_mavlink_enabled != 0) printf("> Start Mavlink\r\n");
+	else printf("> Stop Mavlink\r\n");
+	mavlink->BufFlush();
+}	
 
 int32_t Mavlink_tx(void *data, int32_t *size)
 {
