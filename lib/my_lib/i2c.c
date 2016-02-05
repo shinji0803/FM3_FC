@@ -23,7 +23,7 @@ void Init_i2c(){
 	i2c = &I2cDev[3];
 	i2c->UnInit();
 	
-	i2c->Cfg.BaudRate = 200000; 
+	i2c->Cfg.BaudRate = 400000; 
 	i2c->Cfg.Mode = I2cDev_MODE_MASTER;
 	
 	ret = i2c->Init();

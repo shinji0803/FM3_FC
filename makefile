@@ -26,18 +26,17 @@ WRITER  = VERSALOON
 #WRITER  = STLINKV2
 
 # Development Tools based on GNU Compiler Collection
-#DEVTOOL = LAUNCHPAD
+DEVTOOL = LAUNCHPAD
 #DEVTOOL = BLEEDING_EDGE
 #DEVTOOL = YAGARTO
 #DEVTOOL = DEVKITARM
-DEVTOOL = SOURCERY
+#DEVTOOL = SOURCERY
 
 # Check BuildTools
 ifeq ($(DEVTOOL),LAUNCHPAD)
- TOOLDIR = C:/Devz/ARM/Launchpad
+ TOOLDIR = C:/Program Files (x86)/GNU Tools ARM Embedded\4.9 2015q1
  NANOLIB = --specs=nano.specs
-  NANOLIB += -u _printf_float
-#  NANOLIB += -u _scanf_float
+ NANOLIB += -u _printf_float
  REMOVAL = rm
 else ifeq ($(DEVTOOL),BLEEDING_EDGE)
  TOOLDIR = C:/Devz/ARM/Bleeding-edge
@@ -56,7 +55,7 @@ else
 endif
 
 # Set UNIX-Like tools (Coreutils)
-MAKEDIR = C:/ARM_dev_tool/coreutils-5.3.0-bin/bin
+MAKEDIR = C:/ARM_dev/coreutils-5.3.0/bin
 
 # Set Flasher and Debugger
 OCDIR	= C:/Devz/ARM/OCD
